@@ -51,10 +51,7 @@ class Player:
         # right
         if dx == 1:
             if grid[tempx+1][tempy] == 0:
-                print("yessss")
                 self.x += 1
-            else:
-                print("huh?",grid[tempx+1][tempy])
         # left
         elif dx == -1:
             tempx = math.ceil(self.x / 4)

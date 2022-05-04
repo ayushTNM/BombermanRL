@@ -167,7 +167,7 @@ class game:
                 #     continue
                 # if np.random.uniform() < .18:
                 #     self.grid[i,j] = 1
-                self.DFS(*self.player.get_coords())
+                # self.DFS(*self.player.get_coords())
                 if np.random.uniform() < .32:
                     self.grid[i,j] = 2
         

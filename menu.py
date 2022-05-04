@@ -4,9 +4,10 @@ import numpy as np
 import game
 from algorithm import Algorithm
 
-WIDTH=20
-HEIGHT=20
+WIDTH=100
+HEIGHT=100
 GRID_SIZE = np.array([WIDTH,HEIGHT],dtype=int)
+FONT_SIZE = 18
 
 COLOR_BACKGROUND = (153, 153, 255)
 COLOR_BLACK = (0, 0, 0)
@@ -72,11 +73,11 @@ def menu_loop():
     menu_theme = pygame_menu.themes.Theme(
         selection_color=COLOR_WHITE,
         widget_font=pygame_menu.font.FONT_BEBAS,
-        title_font_size=int(TILE_SIZE*(menu_percentage+1)),
+        title_font_size=FONT_SIZE,
         title_font_color=COLOR_BLACK,
         title_font=pygame_menu.font.FONT_BEBAS,
         widget_font_color=COLOR_BLACK,
-        widget_font_size=int(TILE_SIZE*menu_percentage),
+        widget_font_size=int(FONT_SIZE*0.9),
         background_color=MENU_BACKGROUND_COLOR,
         title_background_color=MENU_TITLE_COLOR,
         widget_font_shadow=False
@@ -115,11 +116,11 @@ def menu_loop():
     about_menu_theme = pygame_menu.themes.Theme(
         selection_color=COLOR_WHITE,
         widget_font=pygame_menu.font.FONT_BEBAS,
-        title_font_size=int(TILE_SIZE*menu_percentage),
+        title_font_size=FONT_SIZE,
         title_font_color=COLOR_BLACK,
         title_font=pygame_menu.font.FONT_BEBAS,
         widget_font_color=COLOR_BLACK,
-        widget_font_size=int(TILE_SIZE*(menu_percentage-.3)),
+        widget_font_size=int(FONT_SIZE*0.7),
         background_color=MENU_BACKGROUND_COLOR,
         title_background_color=MENU_TITLE_COLOR,
         widget_font_shadow=False
