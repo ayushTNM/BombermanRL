@@ -4,31 +4,32 @@ import numpy as np
 import game
 from algorithm import Algorithm
 
-WIDTH=100
-HEIGHT=100
-GRID_SIZE = np.array([WIDTH,HEIGHT],dtype=int)
-FONT_SIZE = 18
+width=20
+height=20
+grid_size = np.array([width+2,height+2],dtype=int)
+(wall_chance,box_chance) = (0.18,.32)
+font_size = 18
 
-COLOR_BACKGROUND = (153, 153, 255)
-COLOR_BLACK = (0, 0, 0)
-COLOR_WHITE = (255, 255, 255)
-FPS = 60.0
-MENU_BACKGROUND_COLOR = (102, 102, 153)
-MENU_TITLE_COLOR = (51, 51, 255)
+color_background = (153, 153, 255)
+color_black = (0, 0, 0)
+color_white = (255, 255, 255)
+fps = 60.0
+menu_background_color = (102, 102, 153)
+menu_title_color = (51, 51, 255)
 
 pygame.display.init()
 pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 INFO = pygame.display.Info()
 
-TILE_SIZE = int((INFO.current_h*0.9)/HEIGHT)
-WINDOW_SIZE = GRID_SIZE*TILE_SIZE
+tile_size = int((INFO.current_h*0.9)/grid_size[1])
+window_size = grid_size*tile_size
 
 player_alg = Algorithm.PLAYER
 # en1_alg = Algorithm.DIJKSTRA
 # en2_alg = Algorithm.DFS
 # en3_alg = Algorithm.DIJKSTRA
 show_path = True
-surface = pygame.display.set_mode(WINDOW_SIZE)
+surface = pygame.display.set_mode(window_size)
 
 
 def change_path(value, c):
@@ -58,41 +59,41 @@ def change_player(value, c):
 
 def main_background():
     global surface
-    surface.fill(COLOR_BACKGROUND)
+    surface.fill(color_background)
 
 
 def menu_loop():
     pygame.init()
 
     menu_percentage = 0.9  #percentage of window to use as Menu
-    Game = game.game(GRID_SIZE,TILE_SIZE)
+    Game = game.game(grid_size, box_chance, wall_chance, tile_size)
 
     pygame.display.set_caption('Bomberman')
     clock = pygame.time.Clock()
 
     menu_theme = pygame_menu.themes.Theme(
-        selection_color=COLOR_WHITE,
+        selection_color=color_white,
         widget_font=pygame_menu.font.FONT_BEBAS,
-        title_font_size=FONT_SIZE,
-        title_font_color=COLOR_BLACK,
+        title_font_size=font_size,
+        title_font_color=color_black,
         title_font=pygame_menu.font.FONT_BEBAS,
-        widget_font_color=COLOR_BLACK,
-        widget_font_size=int(FONT_SIZE*0.9),
-        background_color=MENU_BACKGROUND_COLOR,
-        title_background_color=MENU_TITLE_COLOR,
+        widget_font_color=color_black,
+        widget_font_size=int(font_size*0.9),
+        background_color=menu_background_color,
+        title_background_color=menu_title_color,
         widget_font_shadow=False
     )
 
     play_menu = pygame_menu.Menu(
         theme=menu_theme,
-        height=int(WINDOW_SIZE[1] * menu_percentage),
-        width=int(WINDOW_SIZE[0] * menu_percentage),
+        height=int(window_size[1] * menu_percentage),
+        width=int(window_size[0] * menu_percentage),
         title='Play menu'
     )
 
     play_options = pygame_menu.Menu(theme=menu_theme,
-        height=int(WINDOW_SIZE[1] * menu_percentage),
-        width=int(WINDOW_SIZE[0] * menu_percentage),
+        height=int(window_size[1] * menu_percentage),
+        width=int(window_size[0] * menu_percentage),
         title='Options'
     )
     play_options.add.selector("Character 1", [("Player", Algorithm.PLAYER), ("DFS", Algorithm.DFS),
@@ -114,21 +115,21 @@ def menu_loop():
     play_menu.add.button('Return  to  main  menu', pygame_menu.events.BACK)
 
     about_menu_theme = pygame_menu.themes.Theme(
-        selection_color=COLOR_WHITE,
+        selection_color=color_white,
         widget_font=pygame_menu.font.FONT_BEBAS,
-        title_font_size=FONT_SIZE,
-        title_font_color=COLOR_BLACK,
+        title_font_size=font_size,
+        title_font_color=color_black,
         title_font=pygame_menu.font.FONT_BEBAS,
-        widget_font_color=COLOR_BLACK,
-        widget_font_size=int(FONT_SIZE*0.7),
-        background_color=MENU_BACKGROUND_COLOR,
-        title_background_color=MENU_TITLE_COLOR,
+        widget_font_color=color_black,
+        widget_font_size=int(font_size*0.7),
+        background_color=menu_background_color,
+        title_background_color=menu_title_color,
         widget_font_shadow=False
     )
 
     about_menu = pygame_menu.Menu(theme=about_menu_theme,
-        height=int(WINDOW_SIZE[1] * menu_percentage),
-        width=int(WINDOW_SIZE[0] * menu_percentage),
+        height=int(window_size[1] * menu_percentage),
+        width=int(window_size[0] * menu_percentage),
         title='About'
     )
     about_menu.add.label("Player_controls: ")
@@ -142,8 +143,8 @@ def menu_loop():
 
     main_menu = pygame_menu.Menu(
         theme=menu_theme,
-        height=int(WINDOW_SIZE[1] * (menu_percentage-.1)),
-        width=int(WINDOW_SIZE[0] * (menu_percentage-.1)),
+        height=int(window_size[1] * menu_percentage),
+        width=int(window_size[0] * menu_percentage),
         title='Main menu'
     )
 
@@ -152,7 +153,7 @@ def menu_loop():
     main_menu.add.button('Quit', pygame_menu.events.EXIT)
     while True:
 
-        clock.tick(FPS)
+        clock.tick(fps)
 
         main_background()
 

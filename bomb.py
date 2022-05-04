@@ -28,13 +28,8 @@ class Bomb:
         for move in np.array([[0,-1], [0,1], [-1,0], [1,0]]):
             pos = self.pos
             steps = 0
-            print(map)
-            print(pos,map[pos])
-            while map[pos[0],pos[1]] == 0 and (steps < self.range or self.range==-1):
+            while map[tuple(pos)] == 0 and (steps < self.range or self.range==-1):
                 steps += 1
-                print(pos)
                 pos = move+pos
-                print("here",pos)
-                if map[pos[0],pos[1]] != 1:
+                if map[tuple(pos)] != 1:
                     self.sectors.append(pos)
-        print(self.sectors)

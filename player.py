@@ -10,14 +10,15 @@ class Player:
     animation = []
     bomb_limit = 1
 
-    def __init__(self,pos,range):
-        (self.x,self.y) = pos
+    def __init__(self,pos,range,step=3):
+        self.step = step
+        (self.x,self.y) = np.array(pos)*self.step
         self.range=range
         self.life = True
 
     def move(self, dx, dy, grid, enemies):
-        tempx = int(self.x/4)
-        tempy = int(self.y/4)
+        tempx = int(self.x/self.step) if dx != -1 else math.ceil(self.x / self.step)
+        tempy = int(self.y/self.step) if dy != -1 else math.ceil(self.y / self.step)
         # print(grid)
         # grid=grid.T
         # print(grid)
@@ -32,55 +33,38 @@ class Player:
             if not enemy.life:
                 continue
             else:
-                grid[enemy.pos//4] = 2
-
-        if self.x % 4 != 0 and dx == 0:
-            if self.x % 4 == 1:
-                self.x -= 1
-            elif self.x % 4 == 3:
-                self.x += 1
-            return
-
-        if self.y % 4 != 0 and dy == 0:
-            if self.y % 4 == 1:
-                self.y -= 1
-            elif self.y % 4 == 3:
-                self.y += 1
-            return
-
-        # right
-        if dx == 1:
-            if grid[tempx+1][tempy] == 0:
-                self.x += 1
-        # left
-        elif dx == -1:
-            tempx = math.ceil(self.x / 4)
-            if grid[tempx-1][tempy] == 0:
-                
-                self.x -= 1
+                grid[enemy.pos//self.step] = 2
+        print(self.x,self.y)
+        if dx == 0:
+            # print(self.x)
+            self.x=round((self.x/self.step))*self.step
+            if grid[int(self.x/self.step)][tempy+dy] != 0:
+                return
+            if grid[tempx][tempy+dy] == 0:
+                self.y += dy
             
 
-        # bottom
-        # print(tempx,tempy)
-        if dy == 1:
-            if grid[tempx][tempy+1] == 0:
-                self.y += 1
-        # top
-        elif dy == -1:
-            tempy = math.ceil(self.y / 4)
-            if grid[tempx][tempy-1] == 0:
-                self.y -= 1
 
+
+        elif dy == 0:
+            self.y=round((self.y/self.step))*self.step
+            if grid[tempx+dx][int(self.y/self.step)] != 0:
+                return
+            if grid[tempx+dx][tempy] == 0:
+                self.x += dx
+            
+
+        
     def get_coords(self):
-        return (int(self.x/4),int(self.y/4))
+        return (int(self.x/self.step),int(self.y/self.step))
 
     def plant_bomb(self, map):
-        b = Bomb(self.range, round(self.x/4), round(self.y/4), map, self)
+        b = Bomb(self.range, round(self.x/self.step), round(self.y/self.step), map, self)
         return b
 
     def check_death(self, exp):
         for e in exp:
-            if [int(self.x/4), int(self.y/4)] in e.sectors.tolist():
+            if [int(self.x/self.step), int(self.y/self.step)] in e.sectors.tolist():
                 self.life = False
 
     def load_animations(self, scale):
