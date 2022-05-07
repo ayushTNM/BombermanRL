@@ -183,11 +183,12 @@ class game:
                     if e.key == pygame.K_SPACE:
                         if self.player.bomb_limit == 0:
                             continue
-                        temp_bomb = self.player.plant_bomb(self.grid)
-                        self.bombs.append(temp_bomb)
-                        self.grid[temp_bomb.pos] = 0
-                        if self.player.bomb_limit >=0:
-                            self.player.bomb_limit -= 1
+                        if not self.player.get_coords() in [b.pos for b in self.bombs]:
+                            temp_bomb = self.player.plant_bomb(self.grid)
+                            self.bombs.append(temp_bomb)
+                            self.grid[temp_bomb.pos] = 0
+                            if self.player.bomb_limit >=0:
+                                self.player.bomb_limit -= 1
 
             self.update_bombs(dt)
             # print("here",self.grid)
