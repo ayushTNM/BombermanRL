@@ -4,49 +4,37 @@ class Explosion:
 
     bomber = None
 
-    def __init__(self, x, y, r,countdown=300):
+    def __init__(self, x, y, r):
         self.sourceX = x
         self.sourceY = y
+        self.pos = (x,y)
         self.range = r
-        self.countdown = countdown
-        self.time = self.countdown
+        self.time = 300
         self.frame = 0
-        self.sectors = []
+        self.sectors = set()
 
-    def explode(self, map, bombs, b):
+    def explode(self, map):
+        self.get_range(map)
+        s = np.array(list(self.sectors))
+        map[s[:,0],s[:,1]] = 0 
 
-        self.bomber = b.bomber
-        self.sectors.extend(b.sectors)
-        bombs.remove(b)
-        self.bomb_chain(bombs, map)
-
-    def bomb_chain(self, bombs, map):
-
-        # for s in self.sectors:
-            for b in bombs:
-                if [b.x,b.y] in self.sectors.tolist():
-                    map[b.x,b.y] = 0
-                    b.bomber.bomb_limit+=1
-                    self.explode(map,bombs,b)
-                # if x.posX == s[0] and x.posY == s[1]:
-
-                #     map[x.posX][x.posY] = 0
-                #     x.bomber.bomb_limit += 1
-                #     self.explode(map, bombs, x)
-
-    def clear_sectors(self, map):
-        self.sectors = np.array(self.sectors)
-        # for i in self.sectors:
-        print(self.sectors)
-        print(map[np.array(self.sectors)])
-        print(self.sectors[:,0],self.sectors[:,1])
-        map[self.sectors[:,0],self.sectors[:,1]] = 0
+    def get_range(self, map):
+        # print(self.range)
+        self.sectors.add(self.pos)
+        for move in np.array([(0,-1), (0,1), (-1,0), (1,0)]):
+            neighbour = self.pos
+            steps = 0
+            while map[neighbour] == 0 and (steps < self.range or self.range==-1):
+                steps += 1
+                neighbour = tuple(np.array(move)+np.array(neighbour))
+                if map[neighbour] != 1:
+                    self.sectors.add(neighbour)
 
     def update(self, dt):
 
         self.time = self.time - dt
 
-        if self.time < self.countdown/3:
+        if self.time < 200:
             self.frame = 2
-        elif self.time < self.countdown*(2/3):
+        elif self.time < 100:
             self.frame = 1

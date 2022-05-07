@@ -1,5 +1,6 @@
 import pygame
 import pygame_menu
+import glob
 import numpy as np
 import game
 from algorithm import Algorithm
@@ -21,27 +22,15 @@ pygame.display.init()
 pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 INFO = pygame.display.Info()
 
-tile_size = int((INFO.current_h*0.9)/grid_size[1])
+tile_size = int((INFO.current_h*0.95)/grid_size[1])
 window_size = grid_size*tile_size
 
 player_alg = Algorithm.PLAYER
 # en1_alg = Algorithm.DIJKSTRA
 # en2_alg = Algorithm.DFS
 # en3_alg = Algorithm.DIJKSTRA
-show_path = True
+
 surface = pygame.display.set_mode(window_size)
-
-
-def change_path(value, c):
-    global show_path
-    show_path = c
-
-
-def change_player(value, c):
-    print(value,c)
-    global player_alg
-    player_alg = c
-
 
 # def change_enemy1(value, c):
 #     global en1_alg
@@ -64,9 +53,10 @@ def main_background():
 
 def menu_loop():
     pygame.init()
+    images = glob.glob("images/**/*.png")
 
     menu_percentage = 0.9  #percentage of window to use as Menu
-    Game = game.game(grid_size, box_chance, wall_chance, tile_size)
+    Game = game.game(grid_size, box_chance, wall_chance, tile_size,images)
 
     pygame.display.set_caption('Bomberman')
     clock = pygame.time.Clock()
