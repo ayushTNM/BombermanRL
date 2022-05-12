@@ -49,11 +49,12 @@ class game:
 
         self.loadedImgs = {}
         for img in self.images:
-            if (folder:=img.replace("\\","/").split("/")[-2]) not in self.loadedImgs.keys():
+            img=img.replace("\\","/").split("/")
+            if (folder:=img[-2]) not in self.loadedImgs.keys():
                 self.loadedImgs.update({folder:{}})
             loadedImg = pygame.image.load(img)
             scaledImg = pygame.transform.scale(loadedImg, (tile_size, tile_size))
-            self.loadedImgs[folder].update({img.split('\\')[-1].split('.')[-2]:scaledImg})
+            self.loadedImgs[folder].update({img[-1].split('.')[-2]:scaledImg})
 
         # print(self.loadedImgs)
 
@@ -77,11 +78,11 @@ class game:
         self.bombs,self.explosions = [],[]
 
         if self.alg is Algorithm.PLAYER:
-            self.agent = Player((x,y),-1)
+            self.agent = Player((x,y),4)
             self.agent.load_animations(self.loadedImgs["player"])
         elif self.alg is not Algorithm.NONE:
             self.agent = Enemy(1, 1, self.alg)
-            self.agent.load_animations('', self.loadedImgs["enemy"])
+            self.agent.load_animations(self.loadedImgs["agent"])
         self.main()
 
     def draw(self):
