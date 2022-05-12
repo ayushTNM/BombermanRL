@@ -49,12 +49,12 @@ class game:
 
         self.loadedImgs = {}
         for img in self.images:
-            img=img.replace("\\","/").split("/")
-            if (folder:=img[-2]) not in self.loadedImgs.keys():
+            imgName=img.replace("\\","/").split("/")
+            if (folder:=imgName[-2]) not in self.loadedImgs.keys():
                 self.loadedImgs.update({folder:{}})
             loadedImg = pygame.image.load(img)
             scaledImg = pygame.transform.scale(loadedImg, (tile_size, tile_size))
-            self.loadedImgs[folder].update({img[-1].split('.')[-2]:scaledImg})
+            self.loadedImgs[folder].update({imgName[-1].split('.')[-2]:scaledImg})
 
         # print(self.loadedImgs)
 
