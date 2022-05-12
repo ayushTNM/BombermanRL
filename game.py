@@ -35,7 +35,7 @@ class game:
         self.images=images
         self.box_chance = box_chance if 0<=box_chance<=1 else box_chance/100
         self.wall_chance = wall_chance if 0<=wall_chance<=1 else wall_chance/100
-        self.player = None
+        self.agent = None
         self.grid_size = grid_size
         self.alg = Algorithm.PLAYER
         self.path = True
@@ -49,7 +49,7 @@ class game:
 
         self.loadedImgs = {}
         for img in self.images:
-            if (folder:=img.split("\\")[-2]) not in self.loadedImgs.keys():
+            if (folder:=img.replace("\\","/").split("/")[-2]) not in self.loadedImgs.keys():
                 self.loadedImgs.update({folder:{}})
             loadedImg = pygame.image.load(img)
             scaledImg = pygame.transform.scale(loadedImg, (tile_size, tile_size))
@@ -74,17 +74,14 @@ class game:
     def run(self):
         self.create_grid()
         (x,y) = self.free_idxs[np.random.randint(len(self.free_idxs))]
-        self.player = Player((x,y),-1)
         self.bombs,self.explosions = [],[]
 
         if self.alg is Algorithm.PLAYER:
-            self.player.load_animations(self.loadedImgs["player"])
+            self.agent = Player((x,y),-1)
+            self.agent.load_animations(self.loadedImgs["player"])
         elif self.alg is not Algorithm.NONE:
-            en0 = Enemy(1, 1, self.alg)
-            en0.load_animations('', self.loadedImgs["enemy"])
-            self.player.life = False
-        else:
-            self.player.life = False
+            self.agent = Enemy(1, 1, self.alg)
+            self.agent.load_animations('', self.loadedImgs["enemy"])
         self.main()
 
     def draw(self):
@@ -101,9 +98,9 @@ class game:
         for x in self.explosions:
             for s in x.sectors:
                 self.display.blit(self.loadedImgs["explosion"][str(x.frame+1)], (s[0] * self.tile_size, s[1] * self.tile_size, self.tile_size, self.tile_size))
-        if self.player.life:
-            self.display.blit(self.player.animation[self.player.direction][self.player.frame],
-                (self.player.x * (self.tile_size / self.player.step), self.player.y * (self.tile_size / self.player.step), self.tile_size, self.tile_size))
+        if self.agent.life:
+            self.display.blit(self.agent.animation[self.agent.direction][self.agent.frame],
+                (self.agent.x * (self.tile_size / self.agent.step), self.agent.y * (self.tile_size / self.agent.step), self.tile_size, self.tile_size))
 
 
         # surface = pygame.surfarray.pixels3d(self.display)
@@ -127,10 +124,10 @@ class game:
         #                         mask=np.any(explos!=0,axis=-1)
         #                         surface[tuple(pos)][mask] = explos[mask]
                 
-        #         if self.player.life:
-        #             pscreenpos = (np.array([self.player.x,self.player.y]) * (self.tile_size / self.player.step)).astype(int)
+        #         if self.agent.life:
+        #             pscreenpos = (np.array([self.agent.x,self.agent.y]) * (self.tile_size / self.agent.step)).astype(int)
         #             ppos = list(map(slice,*np.array([pscreenpos,pscreenpos+self.tile_size])))
-        #             player = pygame.surfarray.array3d(self.player.animation[self.player.direction][self.player.frame])
+        #             player = pygame.surfarray.array3d(self.agent.animation[self.agent.direction][self.agent.frame])
         #             mask=np.any(player!=0,axis=-1)
         #             surface[tuple(ppos)][mask] = player[mask]
         pygame.display.update()
@@ -138,8 +135,8 @@ class game:
 
     def generate_map(self):
         print("in")
-        self.gridSearch(self.player.get_coords())
-        # print(self.player.get_coords())
+        self.gridSearch(self.agent.get_coords())
+        # print(self.agent.get_coords())
         count = 0
         while(np.sum(self.reachable) < np.sum(self.grid == 1)*(1-(self.wall_chance+.2))):
             count+=1
@@ -150,14 +147,14 @@ class game:
             elif count % max(self.grid_size-2)//4 == 0:
                 self.create_grid()
             (x,y) = self.free_idxs[np.random.randint(len(self.free_idxs))]
-            self.player = Player((x,y),self.player.range)
-            self.gridSearch(self.player.get_coords())
+            self.agent = Player((x,y),self.agent.range)
+            self.gridSearch(self.agent.get_coords())
         print("out")
         for i in range(len(self.grid)):
             for j in range(len(self.grid[i])):
                 if not self.reachable[i,j] and not self.grid[i,j] in [1,2]:
                     self.grid[i,j]=3
-                if self.grid[i,j] != 0 or (coords:=self.player.get_coords()) == (i,j) or not self.reachable[i,j] or \
+                if self.grid[i,j] != 0 or (coords:=self.agent.get_coords()) == (i,j) or not self.reachable[i,j] or \
                     sum(abs(np.array(coords)-np.array([i,j])))-1 < 2:
                     continue
                 if np.random.uniform() < self.box_chance:
@@ -168,11 +165,11 @@ class game:
 
     def main(self):
         self.generate_map()
-        while self.player.life and 2 in self.grid:
+        while self.agent.life and 2 in self.grid:
             dt = self.clock.tick(15)
             # for en in enemy_list:
             #     en.make_move(grid, bombs, explosions, ene_blocks)
-            self.player.act(self.grid)
+            self.agent.act(self.grid)
 
             self.draw()
             for e in pygame.event.get():
@@ -180,14 +177,14 @@ class game:
                     sys.exit(0)
                 elif e.type == pygame.KEYDOWN:
                     if e.key == pygame.K_SPACE:
-                        if self.player.bomb_limit == 0:
+                        if self.agent.bomb_limit == 0:
                             continue
-                        if not self.player.get_coords() in [b.pos for b in self.bombs]:
-                            temp_bomb = self.player.plant_bomb(self.grid)
+                        if not self.agent.get_coords() in [b.pos for b in self.bombs]:
+                            temp_bomb = self.agent.plant_bomb(self.grid)
                             self.bombs.append(temp_bomb)
                             self.grid[temp_bomb.pos] = 0
-                            if self.player.bomb_limit >=0:
-                                self.player.bomb_limit -= 1
+                            if self.agent.bomb_limit >=0:
+                                self.agent.bomb_limit -= 1
 
             self.update_bombs(dt)
             # print("here",self.grid)
@@ -199,7 +196,7 @@ class game:
             return self.reachable
 
         # print(player)
-        if (row,col) != self.player.get_coords():
+        if (row,col) != self.agent.get_coords():
             self.reachable[row,col] = True
 
         if (col > 0 and not self.reachable[row][col - 1]):
@@ -235,7 +232,7 @@ class game:
             b.detonate(self.bombs)
             if b.explosion != None:
                 self.explosions.append(b.explosion)
-        self.player.check_death(self.explosions)
+        self.agent.check_death(self.explosions)
         for x in self.explosions:
             x.update(dt)
             if x.time < 1:
