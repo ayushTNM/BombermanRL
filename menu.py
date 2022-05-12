@@ -64,11 +64,11 @@ def menu_loop():
     menu_theme = pygame_menu.themes.Theme(
         selection_color=COLOR_WHITE,
         widget_font=pygame_menu.font.FONT_BEBAS,
-        title_FONT_SIZE=FONT_SIZE,
+        title_font_size=FONT_SIZE,
         title_font_color=COLOR_BLACK,
         title_font=pygame_menu.font.FONT_BEBAS,
         widget_font_color=COLOR_BLACK,
-        widget_FONT_SIZE=int(FONT_SIZE*0.9),
+        widget_font_size=int(FONT_SIZE*0.9),
         background_color=MENU_BACKGROUND_COLOR,
         title_background_color=MENU_TITLE_COLOR,
         widget_font_shadow=False
@@ -107,11 +107,11 @@ def menu_loop():
     about_menu_theme = pygame_menu.themes.Theme(
         selection_color=COLOR_BLACK,
         widget_font=pygame_menu.font.FONT_BEBAS,
-        title_FONT_SIZE=FONT_SIZE,
+        title_font_size=FONT_SIZE,
         title_font_color=COLOR_BLACK,
         title_font=pygame_menu.font.FONT_BEBAS,
         widget_font_color=COLOR_BLACK,
-        widget_FONT_SIZE=int(FONT_SIZE*0.7),
+        widget_font_size=int(FONT_SIZE*0.7),
         background_color=MENU_BACKGROUND_COLOR,
         title_background_color=MENU_TITLE_COLOR,
         widget_font_shadow=False
