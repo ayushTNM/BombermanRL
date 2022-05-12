@@ -5,8 +5,8 @@ import numpy as np
 import game
 from algorithm import Algorithm
 
-WIDTH = 20
-HEIGHT = 20
+WIDTH = 100
+HEIGHT = 100
 GRID_SIZE = np.array([WIDTH+2, HEIGHT+2], dtype=int)
 WALL_CHANCE, BOX_CHANCE = 0.18, .32
 FONT_SIZE = 18
@@ -100,7 +100,7 @@ def menu_loop():
     play_options.add.button('Back', pygame_menu.events.BACK)
 
     play_menu.add.button('Start',
-                         Game.run)
+                         Game.main)
 
     play_menu.add.button('Options', play_options)
     play_menu.add.button('Return  to  main  menu', pygame_menu.events.BACK)

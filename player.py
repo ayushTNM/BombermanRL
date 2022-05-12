@@ -14,20 +14,20 @@ class Player:
 
     def __init__(self,pos,range,step=3):
         self.step = step
-        (self.x,self.y) = np.array(pos)*self.step
+        self.x,self.y = np.array(pos)*self.step
         self.range=range
         self.life = True
 
     def move(self, dx, dy, grid):
         tempx = int(self.x/self.step) if dx != -1 else math.ceil(self.x / self.step)
-        tempy = int(self.y/self.step) if dy != -1 else math.ceil(self.y / self.step)
+        tempy = int(self.y/self.step) if dy != 1 else math.ceil(self.y / self.step)
 
         if dx == 0:
             self.x=round((self.x/self.step))*self.step
-            if grid[int(self.x/self.step)][tempy+dy] != 0:
+            if grid[int(self.x/self.step)][tempy-dy] != 0:
                 return
-            if grid[tempx][tempy+dy] == 0:
-                self.y += dy
+            if grid[tempx][tempy-dy] == 0:
+                self.y -= dy
 
         elif dy == 0:
             self.y=round((self.y/self.step))*self.step
@@ -41,16 +41,20 @@ class Player:
         else:
             self.frame += 1
             
-    def act(self,grid):
+    def act(self):
         keys = pygame.key.get_pressed()
-        moves = {pygame.K_DOWN:(0,1),pygame.K_RIGHT:(1,0),pygame.K_UP:(0,-1),pygame.K_LEFT:(-1,0)}
+        moves = [pygame.K_UP,pygame.K_RIGHT,pygame.K_DOWN,pygame.K_LEFT]
         direction = self.direction
-        for ind,(k,a) in enumerate(moves.items()):
+        action = 6
+        for ind,k in enumerate(moves):
             if keys[k]:
                 self.direction = ind
                 if direction != self.direction: self.frame=0
-                self.move(*a,grid)
+                if action == 6: action = ind
             direction = self.direction
+            if action != 6:
+                return action
+        return action
 
         
     def get_coords(self):
