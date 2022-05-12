@@ -53,7 +53,6 @@ class game:
                 self.loadedImgs.update({folder:{}})
             loadedImg = pygame.image.load(img)
             scaledImg = pygame.transform.scale(loadedImg, (tile_size, tile_size))
-            print(type(scaledImg))
             self.loadedImgs[folder].update({img.split('\\')[-1].split('.')[-2]:scaledImg})
 
         # print(self.loadedImgs)
@@ -144,7 +143,7 @@ class game:
         count = 0
         while(np.sum(self.reachable) < np.sum(self.grid == 1)*(1-(self.wall_chance+.2))):
             count+=1
-            print(count,np.prod(self.grid_size-2))
+            # print(count,np.prod(self.grid_size-2))
             if count == max(self.grid_size-2)//2:
                 print("FAIL, NO SPACE FOR PLAYER")
                 exit()
@@ -218,22 +217,16 @@ class game:
 
         frontier = set()	# positions to be expanded
         frontier.add(start)
-        expanded = True
 
-        while expanded:
-            expanded = False		# will remain False if no new positions are found
+        while frontier:
             new_frontier = set()	# will become next frontier
             for pos in frontier:
                 for move in [(0,-1), (0,1), (-1,0), (1,0)]:
                     neighbour = tuple(np.array(pos)+np.array(move))
-                    # print(move,pos,neighbour)
                     if self.reachable[neighbour] == 0:
-                        # print(move,pos,neighbour)
                         new_frontier.add(neighbour)
-                        expanded = True
                         self.reachable[neighbour] = 3	# color reachable position
             frontier = new_frontier
-            # print(frontier)
         self.reachable = self.reachable==3
 
     def update_bombs(self,dt):
@@ -251,32 +244,26 @@ class game:
 
     def game_over(self):
 
-        while True:
-            dt = self.clock.tick(15)
-            self.update_bombs(dt)
-            count = 0
-            winner = ""
-            if count == 1:
-                self.draw()
-                textsurface = self.font.render(winner + " wins", False, (0, 0, 0))
-                font_w = textsurface.get_width()
-                font_h = textsurface.get_height()
-                self.display.blit(textsurface, (self.display.get_width() // 2 - font_w//2,  self.display.get_height() // 2 - font_h//2))
-                pygame.display.update()
-                time.sleep(2)
-                break
-            if count == 0:
-                self.draw()
-                textsurface = self.font.render("Lose", False, (0, 0, 0))
-                font_w = textsurface.get_width()
-                font_h = textsurface.get_height()
-                self.display.blit(textsurface, (self.display.get_width() // 2 - font_w//2, self.display.get_height() // 2 - font_h//2))
-                pygame.display.update()
-                time.sleep(2)
-                break
+        dt = self.clock.tick(15)
+        self.update_bombs(dt)
+        _,counts = np.unique(self.grid, return_counts=True)
+        # winner = ""
+        if counts[2] == 0:
             self.draw()
-
-            for e in pygame.event.get():
-                if e.type == pygame.QUIT:
-                    sys.exit(0)
+            textsurface = self.font.render("Win", False, (0, 0, 0))
+            font_w = textsurface.get_width()
+            font_h = textsurface.get_height()
+            self.display.blit(textsurface, (self.display.get_width() // 2 - font_w//2,  self.display.get_height() // 2 - font_h//2))
+            pygame.display.update()
+            time.sleep(2)
+            # break
+        else:
+            self.draw()
+            textsurface = self.font.render("Lose", False, (0, 0, 0))
+            font_w = textsurface.get_width()
+            font_h = textsurface.get_height()
+            self.display.blit(textsurface, (self.display.get_width() // 2 - font_w//2, self.display.get_height() // 2 - font_h//2))
+            pygame.display.update()
+            time.sleep(2)
+            # break
         self.bombs,self.explosions = [],[]
