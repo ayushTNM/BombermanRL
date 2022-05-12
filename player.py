@@ -21,7 +21,7 @@ class Player:
     def move(self, dx, dy, grid):
         tempx = int(self.x/self.step) if dx != -1 else math.ceil(self.x / self.step)
         tempy = int(self.y/self.step) if dy != -1 else math.ceil(self.y / self.step)
-        # self.movement=True
+
         if dx == 0:
             self.x=round((self.x/self.step))*self.step
             if grid[int(self.x/self.step)][tempy+dy] != 0:
@@ -66,4 +66,5 @@ class Player:
                 break
 
     def load_animations(self, imgs):
-        self.animation=[[imgs[j] for j in list(i)] for _, i in groupby(imgs, lambda a: a[0])]
+        self.animation=[[imgs[j] for j in list(i)] for _, i in groupby(imgs, lambda a: a[1])]
+        print(self.animation)

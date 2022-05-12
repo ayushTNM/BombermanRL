@@ -33,6 +33,4 @@ class Bomb:
             self.explosion.explode(self.map)
             for b in bombs:
                 if b.pos in list(set(self.explosion.sectors) & set([b.pos for b in bombs])):
-                    b.time = 0
-            # self.data["explosions"].update({tuple(exp_temp.sectors): exp_temp})
-    
+                    b.time = 0    

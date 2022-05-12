@@ -54,6 +54,7 @@ def main_background():
 def menu_loop():
     pygame.init()
     images = glob.glob("images/**/*.png")
+    images = sorted(images)
 
     menu_percentage = 0.9  #percentage of window to use as Menu
     Game = game.game(GRID_SIZE, BOX_CHANCE, WALL_CHANCE, tile_size,images)

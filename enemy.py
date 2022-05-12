@@ -3,6 +3,7 @@ import random
 from bomb import Bomb
 from node import Node
 from algorithm import Algorithm
+from itertools import groupby
 
 
 class Enemy:
@@ -290,68 +291,6 @@ class Enemy:
                 grid[int(x.posX / 4)][int(x.posY / 4)].value = 1
         return grid
 
-    def load_animations(self, en, scale):
-        front = []
-        back = []
-        left = []
-        right = []
-        resize_width = scale
-        resize_height = scale
-
-        image_path = 'images/enemy/e'
-        if en == '':
-            image_path = 'images/hero/p'
-
-        f1 = pygame.image.load(image_path + en + 'f0.png')
-        f2 = pygame.image.load(image_path + en + 'f1.png')
-        f3 = pygame.image.load(image_path + en + 'f2.png')
-
-        f1 = pygame.transform.scale(f1, (resize_width, resize_height))
-        f2 = pygame.transform.scale(f2, (resize_width, resize_height))
-        f3 = pygame.transform.scale(f3, (resize_width, resize_height))
-
-        front.append(f1)
-        front.append(f2)
-        front.append(f3)
-
-        r1 = pygame.image.load(image_path + en + 'r0.png')
-        r2 = pygame.image.load(image_path + en + 'r1.png')
-        r3 = pygame.image.load(image_path + en + 'r2.png')
-
-        r1 = pygame.transform.scale(r1, (resize_width, resize_height))
-        r2 = pygame.transform.scale(r2, (resize_width, resize_height))
-        r3 = pygame.transform.scale(r3, (resize_width, resize_height))
-
-        right.append(r1)
-        right.append(r2)
-        right.append(r3)
-
-        b1 = pygame.image.load(image_path + en + 'b0.png')
-        b2 = pygame.image.load(image_path + en + 'b1.png')
-        b3 = pygame.image.load(image_path + en + 'b2.png')
-
-        b1 = pygame.transform.scale(b1, (resize_width, resize_height))
-        b2 = pygame.transform.scale(b2, (resize_width, resize_height))
-        b3 = pygame.transform.scale(b3, (resize_width, resize_height))
-
-        back.append(b1)
-        back.append(b2)
-        back.append(b3)
-
-        l1 = pygame.image.load(image_path + en + 'l0.png')
-        l2 = pygame.image.load(image_path + en + 'l1.png')
-        l3 = pygame.image.load(image_path + en + 'l2.png')
-
-        l1 = pygame.transform.scale(l1, (resize_width, resize_height))
-        l2 = pygame.transform.scale(l2, (resize_width, resize_height))
-        l3 = pygame.transform.scale(l3, (resize_width, resize_height))
-
-        left.append(l1)
-        left.append(l2)
-        left.append(l3)
-
-        self.animation.append(front)
-        self.animation.append(right)
-        self.animation.append(back)
-        self.animation.append(left)
+    def load_animations(self, imgs):
+        self.animation=[[imgs[j] for j in list(i)] for _, i in groupby(imgs, lambda a: a[1])]
 

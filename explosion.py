@@ -19,7 +19,6 @@ class Explosion:
         map[s[:,0],s[:,1]] = 0 
 
     def get_range(self, map):
-        # print(self.range)
         self.sectors.add(self.pos)
         for move in np.array([(0,-1), (0,1), (-1,0), (1,0)]):
             neighbour = self.pos
