@@ -24,13 +24,16 @@ class Bomb:
             self.frame = 1
 
     def detonate(self,bombs):
+        exploded_boxes = 0
         if self.time < 1:
             bombs.remove(self)
             if self.bomber.bomb_limit >=0:
                 self.bomber.bomb_limit += 1
             self.map[self.x][self.y] = 0
             self.explosion = Explosion(self.x, self.y, self.range)
-            self.explosion.explode(self.map)
+            exploded_boxes = self.explosion.explode(self.map)
             for b in bombs:
                 if b.pos in list(set(self.explosion.sectors) & set([b.pos for b in bombs])):
                     b.time = 0    
+        return exploded_boxes
+

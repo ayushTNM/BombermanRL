@@ -5,8 +5,8 @@ import numpy as np
 import game
 from algorithm import Algorithm
 
-WIDTH = 100
-HEIGHT = 100
+WIDTH = 5
+HEIGHT = 5
 GRID_SIZE = np.array([WIDTH+2, HEIGHT+2], dtype=int)
 WALL_CHANCE, BOX_CHANCE = 0.18, .32
 FONT_SIZE = 18
@@ -87,8 +87,7 @@ def menu_loop():
         width=int(window_size[0] * menu_percentage),
         title='Options'
     )
-    play_options.add.selector("Character 1", [("Player", Algorithm.PLAYER), ("DFS", Algorithm.DFS),
-                                              ("DIJKSTRA", Algorithm.DIJKSTRA), ("None", Algorithm.NONE)], onchange=Game.set_alg)
+    play_options.add.selector("Character 1", [("Player", Algorithm.PLAYER), ("None", Algorithm.NONE)], onchange=Game.set_alg)
     # play_options.add.selector("Character 2", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),
     #                                           ("None", Algorithm.NONE)], onchange=change_enemy1)
     # play_options.add.selector("Character 3", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),

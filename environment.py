@@ -9,19 +9,21 @@ class Environment(object):
         self.box_chance = box_chance
         self.height=height
         self.shape=(self.width,self.height)
-        self.exploded_crates = 0
+        self.exploded_boxes = 0
         self.box_count = 0
         self.generate()
-        self.n_states = self.height * self.width * self.box_count
+        self.n_states = self.height * self.width * (self.box_count+1)
+        print(self.width,self.height,self.n_states)
         self.bombs,self.explosions = [],[]
         pass
 
     def to_state(self,location):
         # print((*self.shape,self.box_count))
-        return np.ravel_multi_index((*location,self.exploded_crates),(*self.shape,self.box_count))
+        print(location)
+        return np.ravel_multi_index((*location,self.exploded_boxes),(*self.shape,(self.box_count+1)))
 
     def to_index(self,state):
-        return np.ravel_index(state,(*self.shape,self.box_count))
+        return np.unravel_index(state,(*self.shape,(self.box_count+1)))
 
     def create_grid(self):
         self.grid = np.zeros(tuple(self.shape),dtype=int)
@@ -58,13 +60,16 @@ class Environment(object):
                 if np.random.uniform() < self.box_chance:
                     self.grid[i,j] = 2
                     self.box_count+=1
+        self.bkppos = (self.x,self.y)
         self.bkpgrid = self.grid.copy()
         
-    def reset(self):
+    def reset(self,agent):
         self.grid = self.bkpgrid.copy()
-        self.exploded_crates = 0
+        self.exploded_boxes = 0
         self.bombs,self.explosions = [],[]
-        return self.bkppos
+        agent.x,agent.y = np.array(self.bkppos)*agent.step
+        agent.life = True
+        return agent, self.to_state(agent.get_coords())
 
     def gridSearch(self,start):
         self.reachable = self.grid.copy()
@@ -97,30 +102,39 @@ class Environment(object):
             for s in x.sectors:
                 display.blit(imgs["explosion"][str(x.frame+1)], (s[0] * tile_size, s[1] * tile_size, tile_size, tile_size))
     
-    def step(self, action, agent):
+    def step(self, action, agent,dt):
+        r = -1
         actions = [(0,1),(1,0),(0,-1),(-1,0)]
         if action < 4:
             agent.move(*actions[action],self.grid)
         elif action < 5:
+            if agent.bomb_limit == 0:
+                return r, self.to_state(agent.get_coords())
             temp_bomb = agent.plant_bomb(self.grid)
             self.bombs.append(temp_bomb)
             self.grid[temp_bomb.pos] = 0
             if agent.bomb_limit >=0:
                 agent.bomb_limit -= 1
-        if agent.frame == 0:
-            self.to_state(agent.get_coords())
+        r += self.update_bombs(agent,dt)
+        return r, self.to_state(agent.get_coords())
+        # print((agent.x/agent.step,agent.y/agent.step), agent.get_coords())
+        # if (agent.x/agent.step,agent.y/agent.step) == agent.get_coords():
+        #     print(self.to_state(agent.get_coords()))
 
-    def update_bombs(self,agent,dt):
+    def update_bombs(self,agent,dt) -> int:
+        expl_b=0
         for b in self.bombs:
             b.update(dt)
-            b.detonate(self.bombs)
+            expl_b = b.detonate(self.bombs)
+            self.exploded_boxes += expl_b
             if b.explosion != None:
                 self.explosions.append(b.explosion)
-        agent.check_death(self.explosions)
+        # agent.check_death(self.explosions)
         for x in self.explosions:
             x.update(dt)
             if x.time < 1:
                 self.explosions.remove(x)
+        return expl_b
         
     
     def possible_actions(self):

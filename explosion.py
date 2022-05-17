@@ -16,7 +16,9 @@ class Explosion:
     def explode(self, map):
         self.get_range(map)
         s = np.array(list(self.sectors))
+        m = map[s[:,0],s[:,1]]
         map[s[:,0],s[:,1]] = 0 
+        return sum(m==2)
 
     def get_range(self, map):
         self.sectors.add(self.pos)
