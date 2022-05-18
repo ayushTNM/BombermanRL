@@ -11,14 +11,14 @@ class Agent:
     frame = 0
     movement = False
     animation = []
-    bomb_limit = -1
-
-    def __init__(self,pos,range,step=3):
+    Life = True
+    def __init__(self,pos,b_range,step,bomb_limit,death):
+        self.bomb_limit = bomb_limit
         self.step = step
         self.x,self.y = np.array(pos)*self.step
-        self.range=range
-        self.life = True
-
+        self.range=b_range
+        self.death = death
+    
     def move(self, dx, dy, grid):
         tempx = self.x//self.step if dx != -1 else math.ceil(self.x / self.step)
         tempy = self.y//self.step if dy != 1 else math.ceil(self.y / self.step)
@@ -36,94 +36,78 @@ class Agent:
                 return
             if grid[tempx+dx][tempy] == 0:
                 self.x += dx
-            
-    def act(self):
-        keys = pygame.key.get_pressed()
-        moves = [pygame.K_UP,pygame.K_RIGHT,pygame.K_DOWN,pygame.K_LEFT]
-        direction = self.direction
-        action = 6
-        movement = False
-        for ind,k in enumerate(moves):
-            if keys[k]:
-                direction = ind
-                if direction != self.direction: self.frame=0; self.direction = direction
-                if action == 6: action = ind; movement = True
-            if action != 6:  
-                if movement:
-                    if self.frame == 2:
-                        self.frame = 0
-                    else:
-                        self.frame += 1
-                    return action
-                else:
-                    self.frame = 0
-        return action
 
-        
     def get_coords(self):
-        return (int(self.x/self.step),int(self.y/self.step))
-
-    def plant_bomb(self, map):
-        return Bomb(self.range, round(self.x/self.step), round(self.y/self.step), map, self)
+        return (round(self.x/self.step),round(self.y/self.step))
 
     def check_death(self, exp):
-        for e in exp:
-            if (int(self.x/self.step), int(self.y/self.step)) in e.sectors:
-                self.life = False
-                break
+        if self.death and self.life is not False:
+            # for e in exp:
+                if (int(self.x/self.step), int(self.y/self.step)) in exp.sectors:
+                    self.life = False
+                    # break
 
     def load_animations(self, imgs):
         self.animation=[[imgs[j] for j in list(i)] for _, i in groupby(imgs, lambda a: a[1])]
         print(self.animation)
 
-class PrioritizedSweepingAgent:
-    direction = 0
-    frame = 0
-    movement = False
-    animation = []
-    bomb_limit = -1
+
+class Player(Agent):
+
+    def __init__(self,pos,b_range=-1,step=3,bomb_limit=-1,death=True):
+        self.type = type(self).__name__
+        super().__init__(pos,b_range,step,bomb_limit,death)
+
+    def plant_bomb(self, map):
+        return Bomb(self.range, round(self.x/self.step), round(self.y/self.step), map, self)
+            
+    def select_action(self,s,eps):
+        keys = pygame.key.get_pressed()
+        moves = [pygame.K_UP,pygame.K_RIGHT,pygame.K_DOWN,pygame.K_LEFT]
+        direction = self.direction
+        action = 4
+        movement=False
+        for ind,k in enumerate(moves):
+            if keys[k]:
+                action = direction = ind
+                movement=True
+                if direction != self.direction: self.frame=0; self.direction = direction
+        if movement:
+            if self.frame == 2:
+                self.frame = 0
+            else:
+                self.frame += 1
+        else:
+            self.frame=0
+        return action
+
+class PrioritizedSweepingAgent(Agent):
 
     def __init__(self, n_states: int, n_actions: int, alpha: float, gamma: float,
-                 pos: tuple[int, int], b_range: int, step: int = 3, 
+                 pos: tuple[int, int], b_range: int =-1, step: int = 1, bomb_limit: int= 1,death: bool=True,
                  max_queue_size: int = 200, priority_cutoff: float = 0.01) -> None:
+        self.type = type(self).__name__
         self.n_states = n_states
         self.n_actions = n_actions
         self.alpha = alpha
         self.gamma = gamma
-        self.range = b_range
-        self.step = step
-        self.x, self.y = np.array(pos)*step
         self.queue = PriorityQueue(maxsize=max_queue_size)
         self.priority_cutoff = priority_cutoff
         self.Q = np.zeros((n_states, n_actions))
         self.N = np.zeros((n_states, n_actions, n_states))
         self.model = np.zeros((n_states, n_actions, 2), dtype = int)
-        self.life = True
-
-    def move(self, dx, dy, grid):
-        tempx = self.x//self.step if dx != -1 else math.ceil(self.x / self.step)
-        tempy = self.y//self.step if dy != 1 else math.ceil(self.y / self.step)
-
-        if dx == 0:
-            self.x=round((self.x/self.step))*self.step
-            if grid[int(self.x/self.step)][tempy-dy] != 0:
-                return
-            if grid[tempx][tempy-dy] == 0:
-                self.y -= dy
-
-        elif dy == 0:
-            self.y=round((self.y/self.step))*self.step
-            if grid[tempx+dx][int(self.y/self.step)] != 0:
-                return
-            if grid[tempx+dx][tempy] == 0:
-                self.x += dx
-
-    def select_action(self, s: int, eps: float) -> int:
-        """Epsilon-greedy action selection"""
-        return np.random.choice(np.where(self.Q[s] == np.max(self.Q[s]))[0]) if np.random.rand() > eps else np.random.choice(self.n_actions)
+        super().__init__(pos,b_range,step,bomb_limit,death)
 
     def plant_bomb(self, map):
         return Bomb(self.range, round(self.x/self.step), round(self.y/self.step), map, self)
+
+    def select_action(self, s: int, eps: float) -> int:
+        """Epsilon-greedy action selection"""
+        if self.bomb_limit == 0:
+            actions = self.n_actions-1
+        else:
+            actions = self.n_actions
+        return np.random.choice(np.where(self.Q[s] == np.max(self.Q[s]))[0]) if np.random.rand() > eps else np.random.choice(actions)
         
     def update(self, s: int, a: int, r: int, sp: int, done: bool, n_planning_updates: int) -> None:
         """Main update function of Prioritized Sweeping agent"""
@@ -164,16 +148,3 @@ class PrioritizedSweepingAgent:
     def _calc_p(self, s: int, a: int, r: int, sp: int) -> float:
         """Calculate the priority of a given transition"""
         return abs(r + self.gamma * max(self.Q[sp]) - self.Q[s,a])
-
-    def load_animations(self, imgs):
-        self.animation=[[imgs[j] for j in list(i)] for _, i in groupby(imgs, lambda a: a[1])]
-        print(self.animation)
-    
-    def get_coords(self):
-        return (int(self.x/self.step),int(self.y/self.step))
-    
-    def check_death(self, exp):
-        for e in exp:
-            if (int(self.x/self.step), int(self.y/self.step)) in e.sectors:
-                self.life = False
-                break

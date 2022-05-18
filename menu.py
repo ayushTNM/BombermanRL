@@ -87,7 +87,8 @@ def menu_loop():
         width=int(window_size[0] * menu_percentage),
         title='Options'
     )
-    play_options.add.selector("Character 1", [("Player", Algorithm.PLAYER), ("None", Algorithm.NONE)], onchange=Game.set_alg)
+    play_options.add.selector("Character 1", [("Player", Algorithm.PLAYER), ("Prioritized Sweeping Agent", Algorithm.PS),
+                                                 ("None", Algorithm.NONE)], onchange=Game.set_alg)
     # play_options.add.selector("Character 2", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),
     #                                           ("None", Algorithm.NONE)], onchange=change_enemy1)
     # play_options.add.selector("Character 3", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),

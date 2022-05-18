@@ -8,13 +8,10 @@ class Environment(object):
         self.wall_chance = wall_chance
         self.box_chance = box_chance
         self.height=height
-        self.shape=(self.width,self.height)
+        self.shape=np.array([self.width,self.height])
         self.exploded_boxes = 0
         self.box_count = 0
         self.generate()
-        self.n_states = self.height * self.width * (self.box_count+1)
-        print(self.width,self.height,self.n_states)
-        self.bombs,self.explosions = [],[]
         pass
 
     def to_state(self,location):
@@ -38,11 +35,12 @@ class Environment(object):
         self.gridSearch((x,y))
         while(np.sum(self.reachable) < np.sum(self.grid == 1)*(1-(self.wall_chance+.2))):
             count+=1
-            if count == max(self.shape-2)//2:
+            if count == max(self.shape-2):
                 print("FAIL, NO SPACE FOR PLAYER")
                 exit()
             elif count % max(self.shape-2)//4 == 0:
                 self.create_grid()
+                free_idxs = list(zip(*np.where(self.grid==0)))
             x,y = free_idxs[np.random.randint(len(free_idxs))]
             self.gridSearch((x,y))
         self.x,self.y = x,y
@@ -62,6 +60,8 @@ class Environment(object):
                     self.box_count+=1
         self.bkppos = (self.x,self.y)
         self.bkpgrid = self.grid.copy()
+        self.n_states = self.height * self.width * (self.box_count+1)
+        self.bombs,self.explosions = [],[]
         
     def reset(self,agent):
         self.grid = self.bkpgrid.copy()
@@ -107,21 +107,24 @@ class Environment(object):
         actions = [(0,1),(1,0),(0,-1),(-1,0)]
         if action < 4:
             agent.move(*actions[action],self.grid)
-        elif action < 5:
+        elif action > 4:
+            if agent.life == False:
+                r-=100
+                return r, self.to_state(agent.get_coords())
             if agent.bomb_limit == 0:
                 return r, self.to_state(agent.get_coords())
-            temp_bomb = agent.plant_bomb(self.grid)
-            self.bombs.append(temp_bomb)
-            self.grid[temp_bomb.pos] = 0
-            if agent.bomb_limit >=0:
-                agent.bomb_limit -= 1
-        r += self.update_bombs(agent,dt)
+            if not agent.get_coords() in [b.pos for b in self.bombs]:
+                agent.bomb_limit -=1
+                temp_bomb = agent.plant_bomb(self.grid)
+                self.bombs.append(temp_bomb)
+                self.grid[temp_bomb.pos] = 0
+        r += self.update_bombs(dt)
         return r, self.to_state(agent.get_coords())
         # print((agent.x/agent.step,agent.y/agent.step), agent.get_coords())
         # if (agent.x/agent.step,agent.y/agent.step) == agent.get_coords():
         #     print(self.to_state(agent.get_coords()))
 
-    def update_bombs(self,agent,dt) -> int:
+    def update_bombs(self,dt) -> int:
         expl_b=0
         for b in self.bombs:
             b.update(dt)
@@ -129,7 +132,6 @@ class Environment(object):
             self.exploded_boxes += expl_b
             if b.explosion != None:
                 self.explosions.append(b.explosion)
-        # agent.check_death(self.explosions)
         for x in self.explosions:
             x.update(dt)
             if x.time < 1:

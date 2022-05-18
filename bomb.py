@@ -22,6 +22,7 @@ class Bomb:
             self.frame = 2
         elif self.time < 2000:
             self.frame = 1
+        print(self.time)
 
     def detonate(self,bombs):
         exploded_boxes = 0
@@ -32,6 +33,7 @@ class Bomb:
             self.map[self.x][self.y] = 0
             self.explosion = Explosion(self.x, self.y, self.range)
             exploded_boxes = self.explosion.explode(self.map)
+            self.bomber.check_death(self.explosion)
             for b in bombs:
                 if b.pos in list(set(self.explosion.sectors) & set([b.pos for b in bombs])):
                     b.time = 0    

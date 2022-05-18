@@ -3,7 +3,7 @@ import sys
 # import glob
 from environment import Environment
 import time
-from agent import Agent, PrioritizedSweepingAgent
+from agent import Player, PrioritizedSweepingAgent
 from enemy import Enemy
 from algorithm import Algorithm
 import numpy as np
@@ -58,13 +58,6 @@ class game:
             self.loadedImgs[folder].update({imgName[-1].split('.')[-2]:scaledImg})
         
         self.env = Environment(*grid_size,wall_chance,box_chance)
-        if self.alg is Algorithm.PLAYER:
-            # self.agent = Agent((self.env.x,self.env.y),-1)
-            self.agent = PrioritizedSweepingAgent(self.env.n_states,6,0.01,0.99,(self.env.x,self.env.y),-1,step=1)
-            self.agent.load_animations(self.loadedImgs["player"])
-        elif self.alg is not Algorithm.NONE:
-            self.agent = Enemy(1, 1, self.alg)
-            self.agent.load_animations(self.loadedImgs["agent"])
         # print(self.loadedImgs)
 
     def set_alg(self,_,c):
@@ -163,36 +156,49 @@ class game:
 
 
     def main(self):
-        for i in range(100):
-            self.agent,s = self.env.reset(self.agent)
-            while self.agent.life and 2 in self.env.grid:
-                dt = self.clock.tick(15)
-                # for en in enemy_list:
-                #     en.make_move(grid, bombs, explosions, ene_blocks)
-                # a = self.agent.act()
-                a = self.agent.select_action(s,0.1)
+        iterations = 1
+        episodes = 100
+        for _ in range(iterations):
+            self.env.generate()
+            if self.alg is Algorithm.PLAYER:
+                self.agent = Player((self.env.x,self.env.y),-1)
+                self.agent.load_animations(self.loadedImgs["player"])
+            elif self.alg is not Algorithm.NONE:
+                self.agent = PrioritizedSweepingAgent(self.env.n_states,6,0.01,0.99,(self.env.x,self.env.y))
+                self.agent.load_animations(self.loadedImgs["agent"])
 
-                self.draw()
-                for e in pygame.event.get():
-                    if e.type == pygame.QUIT:
-                        sys.exit(0)
-                    elif e.type == pygame.KEYDOWN:
-                        if e.key == pygame.K_SPACE:
-                            if self.agent.bomb_limit == 0:
-                                continue
-                            if not self.agent.get_coords() in [b.pos for b in self.env.bombs]:
-                                a = 4
-                                # temp_bomb = self.agent.plant_bomb(self.grid)
-                                # self.bombs.append(temp_bomb)
-                                # self.grid[temp_bomb.pos] = 0
-                                # if self.agent.bomb_limit >=0:
-                                #     self.agent.bomb_limit -= 1
-                reward, next_state = self.env.step(a,self.agent,dt)
-                self.agent.update(s,a,reward,next_state,0,10)
-                s = next_state
-                # print("here",self.grid)
-            self.game_over()
-            print(self.agent.Q)
+            for _ in range(episodes):
+                self.agent,s = self.env.reset(self.agent)
+                while self.agent.life and 2 in self.env.grid:
+                    if self.alg == Algorithm.PLAYER:
+                        dt = self.clock.tick(15)
+                    else:
+                        dt = self.clock.tick(60)
+
+                    a = self.agent.select_action(s,0.1)
+
+                    for e in pygame.event.get():
+                        if e.type == pygame.QUIT: 
+                            sys.exit(0)
+                        elif e.type == pygame.KEYDOWN:
+                            if e.key == pygame.K_ESCAPE:
+                                sys.exit(0)
+                            if e.key == pygame.K_SPACE and self.alg == Algorithm.PLAYER:
+                                a = 5
+
+                    self.draw()
+                    reward, next_state = self.env.step(a,self.agent,dt)
+                    # self.agent.check_death(self.env.explosions)
+                    if self.alg == Algorithm.PS:
+                        self.agent.update(s,a,reward,next_state,0,10)
+                    s = next_state
+
+                self.game_over()
+                if self.alg == Algorithm.PLAYER:
+                    break
+            else:
+                continue
+            break
 
     def DFS(self,row,col):
         # print("in")
@@ -234,8 +240,11 @@ class game:
 
     def game_over(self):
 
-        dt = self.clock.tick(15)
-        self.env.update_bombs(self.agent,dt)
+        if self.alg == Algorithm.PLAYER:
+            dt = self.clock.tick(15)
+        else:
+            dt = self.clock.tick(60)
+        self.env.update_bombs(dt)
         _,counts = np.unique(self.env.grid, return_counts=True)
         # winner = ""
         if len(counts) == 2:
@@ -245,7 +254,10 @@ class game:
             font_h = textsurface.get_height()
             self.display.blit(textsurface, (self.display.get_width() // 2 - font_w//2,  self.display.get_height() // 2 - font_h//2))
             pygame.display.update()
-            time.sleep(2)
+            if self.alg == Algorithm.PLAYER:
+                time.sleep(2)
+            else:
+                time.sleep(.5)
             # break
         else:
             self.draw()
@@ -254,5 +266,8 @@ class game:
             font_h = textsurface.get_height()
             self.display.blit(textsurface, (self.display.get_width() // 2 - font_w//2, self.display.get_height() // 2 - font_h//2))
             pygame.display.update()
-            time.sleep(2)
+            if self.alg == Algorithm.PLAYER:
+                time.sleep(2)
+            else:
+                time.sleep(.5)
             # break
