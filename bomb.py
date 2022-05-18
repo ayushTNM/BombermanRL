@@ -10,19 +10,20 @@ class Bomb:
         self.x = x
         self.y = y
         self.pos = (x,y)
-        self.time = 3000
+        self.time = 750
         self.bomber = bomber
+        if self.bomber.bomb_limit >=0:
+            self.bomber.bomb_limit-=1
         self.explosion = None
 
     def update(self, dt):
 
         self.time = self.time - dt
 
-        if self.time < 1000:
+        if self.time < 250:
             self.frame = 2
-        elif self.time < 2000:
+        elif self.time < 500:
             self.frame = 1
-        print(self.time)
 
     def detonate(self,bombs):
         exploded_boxes = 0

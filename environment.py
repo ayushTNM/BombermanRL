@@ -16,7 +16,7 @@ class Environment(object):
 
     def to_state(self,location):
         # print((*self.shape,self.box_count))
-        print(location)
+        # print(location)
         return np.ravel_multi_index((*location,self.exploded_boxes),(*self.shape,(self.box_count+1)))
 
     def to_index(self,state):
@@ -114,7 +114,6 @@ class Environment(object):
             if agent.bomb_limit == 0:
                 return r, self.to_state(agent.get_coords())
             if not agent.get_coords() in [b.pos for b in self.bombs]:
-                agent.bomb_limit -=1
                 temp_bomb = agent.plant_bomb(self.grid)
                 self.bombs.append(temp_bomb)
                 self.grid[temp_bomb.pos] = 0

@@ -3,7 +3,7 @@ import pygame_menu
 import glob
 import numpy as np
 import game
-from algorithm import Algorithm
+# from algorithm import Algorithm
 
 WIDTH = 5
 HEIGHT = 5
@@ -25,7 +25,6 @@ INFO = pygame.display.Info()
 tile_size = int((INFO.current_h*0.95)/GRID_SIZE[1])
 window_size = GRID_SIZE*tile_size
 
-player_alg = Algorithm.PLAYER
 # en1_alg = Algorithm.DIJKSTRA
 # en2_alg = Algorithm.DFS
 # en3_alg = Algorithm.DIJKSTRA
@@ -87,8 +86,8 @@ def menu_loop():
         width=int(window_size[0] * menu_percentage),
         title='Options'
     )
-    play_options.add.selector("Character 1", [("Player", Algorithm.PLAYER), ("Prioritized Sweeping Agent", Algorithm.PS),
-                                                 ("None", Algorithm.NONE)], onchange=Game.set_alg)
+    play_options.add.selector("Character 1", [("Player", "Player"), ("Prioritized Sweeping Agent", "PrioritizedSweepingAgent"),
+                                                 ("None", None)], onchange=Game.set_alg)
     # play_options.add.selector("Character 2", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),
     #                                           ("None", Algorithm.NONE)], onchange=change_enemy1)
     # play_options.add.selector("Character 3", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),

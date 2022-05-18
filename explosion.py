@@ -9,7 +9,7 @@ class Explosion:
         self.sourceY = y
         self.pos = (x,y)
         self.range = r
-        self.time = 300
+        self.time = 75
         self.frame = 0
         self.sectors = set()
 
@@ -35,7 +35,7 @@ class Explosion:
 
         self.time = self.time - dt
 
-        if self.time < 200:
+        if self.time < 50:
             self.frame = 2
-        elif self.time < 100:
+        elif self.time < 25:
             self.frame = 1
