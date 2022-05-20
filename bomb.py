@@ -4,13 +4,15 @@ from explosion import Explosion
 class Bomb:
     frame = 0
 
-    def __init__(self, r, x, y, map, bomber):
+    def __init__(self, r, x, y, map, bomber,time):
         self.range = r
         self.map=map
         self.x = x
         self.y = y
         self.pos = (x,y)
-        self.time = 750
+        self.time = time
+        # print(self.time)
+        self.timer= time
         self.bomber = bomber
         if self.bomber.bomb_limit >=0:
             self.bomber.bomb_limit-=1
@@ -20,19 +22,20 @@ class Bomb:
 
         self.time = self.time - dt
 
-        if self.time < 250:
+        if self.time < self.timer/3:
             self.frame = 2
-        elif self.time < 500:
+        elif self.time < self.timer/1.5:
             self.frame = 1
 
     def detonate(self,bombs):
         exploded_boxes = 0
-        if self.time < 1:
+        if self.time < 1 or self.bomber.type == "PrioritizedSweepingAgent":
             bombs.remove(self)
             if self.bomber.bomb_limit >=0:
                 self.bomber.bomb_limit += 1
             self.map[self.x][self.y] = 0
-            self.explosion = Explosion(self.x, self.y, self.range)
+            # print(self.time)
+            self.explosion = Explosion(self.x, self.y, self.range,self.timer/10+1)
             exploded_boxes = self.explosion.explode(self.map)
             self.bomber.check_death(self.explosion)
             for b in bombs:

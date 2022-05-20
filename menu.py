@@ -3,12 +3,11 @@ import pygame_menu
 import glob
 import numpy as np
 import game
-# from algorithm import Algorithm
 
 WIDTH = 5
 HEIGHT = 5
 GRID_SIZE = np.array([WIDTH+2, HEIGHT+2], dtype=int)
-WALL_CHANCE, BOX_CHANCE = 0.18, .32
+WALL_CHANCE, BOX_CHANCE = 0.18, .45
 FONT_SIZE = 18
 
 COLOR_BACKGROUND = (153, 153, 255)
@@ -87,14 +86,14 @@ def menu_loop():
         title='Options'
     )
     play_options.add.selector("Character 1", [("Player", "Player"), ("Prioritized Sweeping Agent", "PrioritizedSweepingAgent"),
-                                                 ("None", None)], onchange=Game.set_alg)
+                                                 ("Random", None)], onchange=Game.set_alg)
     # play_options.add.selector("Character 2", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),
     #                                           ("None", Algorithm.NONE)], onchange=change_enemy1)
     # play_options.add.selector("Character 3", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),
     #                                           ("None", Algorithm.NONE)], onchange=change_enemy2,  default=1)
     # play_options.add.selector("Character 4", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),
     #                                           ("None", Algorithm.NONE)], onchange=change_enemy3)
-    play_options.add.selector("Show path", [("Yes", True), ("No", False)], onchange=Game.set_path)
+    play_options.add.selector("Render (Agent Only)", [("Yes", True), ("No", False)], onchange=Game.set_render)
 
     play_options.add.button('Back', pygame_menu.events.BACK)
 

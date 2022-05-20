@@ -36,6 +36,14 @@ class Agent:
                 return
             if grid[tempx+dx][tempy] == 0:
                 self.x += dx
+        
+        if self.frame == 2:
+            self.frame = 0
+        else:
+            self.frame += 1
+
+    def plant_bomb(self, map, time):
+        return Bomb(self.range, round(self.x/self.step), round(self.y/self.step), map, self,time*50)
 
     def get_coords(self):
         return (round(self.x/self.step),round(self.y/self.step))
@@ -49,7 +57,7 @@ class Agent:
 
     def load_animations(self, imgs):
         self.animation=[[imgs[j] for j in list(i)] for _, i in groupby(imgs, lambda a: a[1])]
-        print(self.animation)
+        # print(self.animation)
 
 
 class Player(Agent):
@@ -57,34 +65,29 @@ class Player(Agent):
     def __init__(self,pos,b_range=-1,step=3,bomb_limit=-1,death=True):
         self.type = type(self).__name__
         super().__init__(pos,b_range,step,bomb_limit,death)
-
-    def plant_bomb(self, map):
-        return Bomb(self.range, round(self.x/self.step), round(self.y/self.step), map, self)
             
     def select_action(self,s,eps):
         keys = pygame.key.get_pressed()
         moves = [pygame.K_UP,pygame.K_RIGHT,pygame.K_DOWN,pygame.K_LEFT]
-        direction = self.direction
         action = 4
-        movement=False
         for ind,k in enumerate(moves):
             if keys[k]:
-                action = direction = ind
-                movement=True
-                if direction != self.direction: self.frame=0; self.direction = direction
-        if movement:
-            if self.frame == 2:
-                self.frame = 0
-            else:
-                self.frame += 1
-        else:
-            self.frame=0
+                action = ind
         return action
+
+class Random(Agent):
+    
+    def __init__(self,pos,b_range=-1,step=1,bomb_limit=1,death=False):
+        self.type = type(self).__name__
+        super().__init__(pos,b_range,step,bomb_limit,death)
+            
+    def select_action(self,s,eps):
+        return np.random.randint(0,6)
 
 class PrioritizedSweepingAgent(Agent):
 
     def __init__(self, n_states: int, n_actions: int, alpha: float, gamma: float,
-                 pos: tuple[int, int], b_range: int =-1, step: int = 1, bomb_limit: int= 1,death: bool=True,
+                 pos: tuple[int, int], b_range: int = 1, step: int = 1, bomb_limit: int= 1,death: bool=False,
                  max_queue_size: int = 200, priority_cutoff: float = 0.01) -> None:
         self.type = type(self).__name__
         self.n_states = n_states
@@ -98,8 +101,6 @@ class PrioritizedSweepingAgent(Agent):
         self.model = np.zeros((n_states, n_actions, 2), dtype = int)
         super().__init__(pos,b_range,step,bomb_limit,death)
 
-    def plant_bomb(self, map):
-        return Bomb(self.range, round(self.x/self.step), round(self.y/self.step), map, self)
 
     def select_action(self, s: int, eps: float) -> int:
         """Epsilon-greedy action selection"""

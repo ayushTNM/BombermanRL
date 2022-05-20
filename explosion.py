@@ -4,12 +4,14 @@ class Explosion:
 
     bomber = None
 
-    def __init__(self, x, y, r):
+    def __init__(self, x, y, r,time):
         self.sourceX = x
         self.sourceY = y
         self.pos = (x,y)
         self.range = r
-        self.time = 75
+        self.time = time
+        self.timer = time
+        # print(time)
         self.frame = 0
         self.sectors = set()
 
@@ -35,7 +37,7 @@ class Explosion:
 
         self.time = self.time - dt
 
-        if self.time < 50:
+        if self.time < self.timer/1.5:
             self.frame = 2
-        elif self.time < 25:
+        elif self.time < self.timer/2:
             self.frame = 1
