@@ -1,80 +1,64 @@
-import pygame
-from environment import Environment
-import time
-from agent import Player, PrioritizedSweepingAgent,Random
-import numpy as np
+# python standard library
+import time                 # timing episode runs
+# dependencies
+import numpy as np          # arrays, math
+import pygame               # rendering, human interaction
+# local imports
+from environment import Environment                             # obtaining rewards for agent
+from agent import Agent                                         # type hinting
+from agent import Player, PrioritizedSweepingAgent, Random      # implementations
 
-BACKGROUND = (107, 142, 35)
-
-grass_img = None
-block_img = None
-box_img = None
-bomb1_img = None
-bomb2_img = None
-bomb3_img = None
-explosion1_img = None
-explosion2_img = None
-explosion3_img = None
-
-
-terrain_images = []
-bomb_images = []
-explosion_images = []
-
-# font = pygame.font.SysFont('Bebas', 30)
-# TEXT_LOSE = font.render('GAME OVER', False, (0, 0, 0))
-# TEXT_WIN = font.render('WIN', False, (0, 0, 0))
+BACKGROUND = (107, 142, 35)     # moss green
 
 class Game:
-    def __init__(self,grid_size, box_chance, wall_chance, tile_size,images):
+    def __init__(self, grid_size: np.ndarray, crate_chance: float, wall_chance: float,
+                 tile_size: int, images: list[str]):
 
-        # print(grid)
         self.grid_size = grid_size
-        self.render = True
-        self.images=images
-        self.box_chance = box_chance if 0<=box_chance<=1 else box_chance/100
-        self.wall_chance = wall_chance if 0<=wall_chance<=1 else wall_chance/100
-        self.agent = None
-        self.grid_size = grid_size
-        self.alg = "Player"
+        self.crate_chance = crate_chance if (0 <= crate_chance <= 1) else crate_chance / 100
+        self.wall_chance = wall_chance if (0 <= wall_chance <= 1) else wall_chance / 100
         self.tile_size = tile_size
+        self.load_images(images)
+
+        # these can be modified from pygame menu
+        self.render = True
+        self.alg = 'Player'
+
+        self.agent: Agent = None
         self.wait_bg = False
 
         pygame.font.init()
         self.font = pygame.font.SysFont('Bebas', 100)
-        self.display = pygame.display.set_mode(self.grid_size*self.tile_size)
+        self.display = pygame.display.set_mode(self.grid_size * self.tile_size)
         pygame.display.set_caption('Bomberman')
         self.clock = pygame.time.Clock()
 
-        self.winSurface = self.font.render("Win", False, (0, 0, 0))
-        self.loseSurface = self.font.render("Lose", False, (0, 0, 0))
-        self.waitSurface = self.font.render("Please Wait", False, (0, 0, 0))
+        # define announcements
+        self.winSurface = self.font.render('Win', False, (0, 0, 0))
+        self.loseSurface = self.font.render('Lose', False, (0, 0, 0))
+        self.waitSurface = self.font.render('Please Wait', False, (0, 0, 0))
 
-        self.loadedImgs = {}
-        for img in self.images:
-            imgName=img.replace("\\","/").split("/")
+    def load_images(self, images: list[str]) -> None:
+        """load all images in list :param images: to attribute self.loadedImgs"""
+        self.loadedImgs: dict[str, pygame.Surface] = {}
+        for img in images:
+            imgName=img.replace('\\','/').split('/')
             if (folder:=imgName[-2]) not in self.loadedImgs.keys():
                 self.loadedImgs.update({folder:{}})
-            loadedImg = pygame.image.load(img)
-            scaledImg = pygame.transform.scale(loadedImg, (tile_size, tile_size))
+            loadedImg: pygame.Surface = pygame.image.load(img)
+            scaledImg: pygame.Surface = pygame.transform.scale(loadedImg, (self.tile_size, self.tile_size))
             self.loadedImgs[folder].update({imgName[-1].split('.')[-2]:scaledImg})
-        
-        # print(self.loadedImgs)
 
-    def set_alg(self,_,c):
-        self.alg = c
-
-    def set_render(self,_,c):
-        self.render = c
+    def set_alg(self, _, c: str): self.alg = c          # called from pygame menu
+    def set_render(self, _, c: str): self.render = c    # called from pygame menu
 
     def draw(self):
         
-        if self.render or self.alg == "Player" or self.wait_bg:
+        if self.render or self.alg == 'Player' or self.wait_bg:
             self.display.fill(BACKGROUND)
-            self.env.render(self.loadedImgs,self.tile_size,self.display)
+            self.env.render(self.loadedImgs, self.tile_size, self.display)
 
-            if self.agent.life:
-                # print(self.agent.direction,self.agent.frame)
+            if self.agent.alive:
                 self.display.blit(self.agent.animation[self.agent.direction][self.agent.frame],
                     (self.agent.x * (self.tile_size / self.agent.step), self.agent.y * (self.tile_size / self.agent.step), self.tile_size, self.tile_size))
             if self.wait_bg:
@@ -86,90 +70,97 @@ class Game:
             pygame.display.update()
 
     def main(self):
-        iterations = 1
-        episodes = 1000
+        n_iteration = 1
+        n_episodes = 50
+        max_n_crates = 8
 
-        Lr = 1
-        Gamma = 0.99
-        Epsilon = 0.1
-        n_planning_updates=10
+        alpha: int = 1                  # learning rate (update rule)
+        gamma: float = 0.99             # discount rate (update rule)
+        epsilon: float = 0.1            # exploration rate (action selection)
+        n_planning_updates: int = 10    # model-based reinforcement learning
 
-        for box_count in np.arange(1,8):
-            self.wait_bg = 1-self.render
+        for crate_count in np.arange(1, max_n_crates):   # train agent for each number of crates
+            self.wait_bg = 1 - self.render
             
-            if self.alg == "Player":
-                self.env = Environment(*self.grid_size,self.wall_chance,self.box_chance)
-            elif self.alg == "PrioritizedSweepingAgent":
-                self.env = Environment(*self.grid_size,self.wall_chance,box_count=box_count,seed=42)
+            if self.alg == 'Player':
+                self.env = Environment(*self.grid_size, self.wall_chance, self.crate_chance)
+            elif self.alg == 'PrioritizedSweepingAgent':
+                self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count, seed=42)
             else:
-                self.env = Environment(*self.grid_size,self.wall_chance,box_count=box_count)
+                self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count)
 
-            data = {"Player":[Player, 15, [(self.env.x,self.env.y)], self.loadedImgs["player"]],
-                    "PrioritizedSweepingAgent":[PrioritizedSweepingAgent, 0, 
-                    [self.env.n_states,self.env.action_size(),Lr,Gamma,(self.env.x,self.env.y)], 
-                    self.loadedImgs["agent"]],
-                    None:[Random, 0, [(self.env.x,self.env.y)], self.loadedImgs["agent"]]}
+            data = {
+                'Player': [Player, 15, [(self.env.x,self.env.y)], self.loadedImgs['player']],
+                    
+                'PrioritizedSweepingAgent':[PrioritizedSweepingAgent, 0, 
+                [self.env.n_states, self.env.action_size(), alpha, gamma, (self.env.x,self.env.y)], self.loadedImgs['agent']],
+                    
+                None:[Random, 0, [(self.env.x,self.env.y)], self.loadedImgs['agent']]
+                }
 
-            agent,fps,args,imgs = data[self.alg]
+            agent, fps, args, imgs = data[self.alg] # unpack data based on algorithm chosen
 
-            best_c_r = float('-inf')
-            actions=None
-            for _ in range(iterations):
-                self.agent = agent(*args)
+            for _ in range(n_iteration):
+                self.agent = agent(*args)           # initialize Agent based on specific arguments
                 self.agent.load_animations(imgs)
+                
+                best_actions = []
+                best_c_r = float('-inf')                # best run => least negative cumulative reward
 
-                for ep in range(episodes):
-                    n_a=0
+                for ep in range(n_episodes):
+                    actions = []
                     c_r = 0
-                    best_actions = []
                     self.agent,s = self.env.reset(self.agent)
                     self.draw()
-                    while self.agent.life and 2 in self.env.grid:
+                    while self.agent.alive and 2 in self.env.grid:
                     
                         self.clock.tick(fps)
                         dt = self.clock.get_fps()
 
-                        a = self.agent.select_action(s,Epsilon)
-                        best_actions.append(a)
-                        n_a+=1
+                        a = self.agent.select_action(s,epsilon)
+                        actions.append(a)
                         
                         reward,next_state = self.env.step(a,self.agent,dt,self.draw)
-                        if self.agent.type == "PrioritizedSweepingAgent":
+                        if self.agent.type == 'PrioritizedSweepingAgent':
                             done = len(np.unique(self.env.grid, return_counts=True)[1]) == 2
                             self.agent.update(s,a,reward,next_state,done,n_planning_updates)
                         s = next_state
-                        c_r+=reward
+                        c_r += reward
 
-                    if c_r > best_c_r and self.agent.type == "PrioritizedSweepingAgent":
+                    if c_r > best_c_r and self.agent.type == 'PrioritizedSweepingAgent':
                         best_c_r = c_r
-                        actions = best_actions
+                        best_actions = actions
 
-                    if self.agent.type ==  "Player":
+                    if self.agent.type ==  'Player':
                         self.game_over(fps)
                         break
-                    elif self.agent.type == "PrioritizedSweepingAgent":
+                    elif self.agent.type == 'PrioritizedSweepingAgent':
                         while True:
                             if done:
                                 break
                             self.env.step(4,self.agent,dt,self.draw)
-                        print("episode: ",ep, n_a,"reward:", c_r)
+                        print(f'episode: {ep}, number of actions: {len(actions)}, reward: {c_r}')
                 else:
-                    print("Done")
+                    print('Done')
                     continue
                 break
             else:
                 if actions != None:
-                    self.render_best(actions,best_c_r)
+                    self.render_best(best_actions, best_c_r)
                 continue
             break
 
-    def render_best(self,actions,r):
-        bkprender = self.render
+    def render_best(self, actions: list[int], r: int) -> None:
+        """
+        After an agent has trained for a number of episodes,
+        this function can be used to render the best sequence of actions it has found
+        """
+        backup_render = self.render
         self.render = True
         self.env.reset(self.agent)
         self.draw()
         time.sleep(1)
-        print("least steps:",len(actions),"bombs:",sum(np.array(actions)==5),"r:",r)
+        # print('least steps:',len(actions),'bombs:',sum(np.array(actions)==5),'r:',r)
         while len(actions)>0:
             self.clock.tick(15)
             dt = self.clock.get_fps()
@@ -177,15 +168,14 @@ class Game:
             actions.pop(0)
             self.draw()
         self.game_over(15)
-        self.render =bkprender
+        self.render = backup_render
 
 
-    def game_over(self,fps):
+    def game_over(self, fps: float):
         self.clock.tick(fps)
         dt = self.clock.get_fps()
         self.env.update_bombs(dt)
-        _,counts = np.unique(self.env.grid, return_counts=True)
-        # winner = ""
+        _, counts = np.unique(self.env.grid, return_counts=True)
         self.draw()
         if len(counts) == 2:
             font_w = self.winSurface.get_width()
@@ -193,12 +183,10 @@ class Game:
             self.display.blit(self.winSurface, (self.display.get_width() // 2 - font_w//2,  self.display.get_height() // 2 - font_h//2))
             pygame.display.update()
             time.sleep(2)
-            # break
         else:
             font_w = self.loseSurface.get_width()
             font_h = self.loseSurface.get_height()
             self.display.blit(self.loseSurface, (self.display.get_width() // 2 - font_w//2, self.display.get_height() // 2 - font_h//2))
             pygame.display.update()
             time.sleep(2)
-            # break
         self.draw()

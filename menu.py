@@ -1,25 +1,28 @@
 """
 Bomberman RL: Menu
-------------------
+---
 Script that should be called
 to run the experiment with pygame rendering
-------------------
+---
 Authors: Ayush Kandhai, Josef Hamelink
 Date: May 2022
 """
 
+# python standard library
 import glob                 # importing image files
+# dependencies
 import numpy as np          # arrays
-import pygame, pygame_menu  # rendering
-from game import Game       # script for running game
+import pygame, pygame_menu  # rendering, human interaction
+# local imports
+from game import Game       # script for running the game
 
 def main():
     main_menu = menu_config()
     menu_loop(main_menu)
 
-# ------------ #
-#   CONSTANTS  #
-# ------------ #
+# ------------- #
+#   CONSTANTS   #
+# ------------- #
 
 WIDTH = 5           # world width (excluding walls)
 HEIGHT = 5          # world height (excluding walls)
@@ -46,9 +49,9 @@ SURFACE = pygame.display.set_mode(WINDOW_SIZE)
 IMAGES: list[str] = glob.glob("images/**/*.png")    # load in image files
 IMAGES = sorted(IMAGES)                             # prevents OS specific issues
 
-# ------------ #
-#   functions  #
-# ------------ #
+# ------------- #
+#   functions   #
+# ------------- #
 
 def main_background():
     global SURFACE; SURFACE.fill(COLOR_BACKGROUND)
@@ -92,11 +95,11 @@ def menu_config() -> pygame_menu.Menu:
             [("Player", "Player"),
             ("Prioritized Sweeping Agent", "PrioritizedSweepingAgent"),
             ("Random", None)],
-            onchange=game.set_alg)
+            onchange = game.set_alg)
     play_options.add.selector("Render (Agent Only)",
             [("Yes", True),
             ("No", False)],
-            onchange=game.set_render)
+            onchange = game.set_render)
     play_options.add.button('Back',
             pygame_menu.events.BACK)
 
