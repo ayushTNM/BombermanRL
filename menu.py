@@ -43,6 +43,9 @@ TILE_SIZE = int((INFO.current_h*0.95) / GRID_SIZE[1])
 WINDOW_SIZE: np.ndarray = GRID_SIZE * TILE_SIZE
 SURFACE = pygame.display.set_mode(WINDOW_SIZE)
 
+IMAGES: list[str] = glob.glob("images/**/*.png")    # load in image files
+IMAGES = sorted(IMAGES)                             # prevents OS specific issues
+
 # ------------ #
 #   functions  #
 # ------------ #
@@ -52,13 +55,11 @@ def main_background():
 
 def menu_config() -> pygame_menu.Menu:
     pygame.init()
-    images: list[str] = glob.glob("images/**/*.png")    # load in image files
-    images = sorted(images)                             # prevents OS specific issues
-    menu_percentage = 0.9                               # % of window to use as menu
-    pygame.display.set_caption('Bomberman')
+    menu_percentage = 0.9                       # % of window to use as menu
+    pygame.display.set_caption('Bomberman')     # window bar caption
 
     # create the "Game" instance
-    game = Game(GRID_SIZE, BOX_CHANCE, WALL_CHANCE, TILE_SIZE, images)
+    game = Game(GRID_SIZE, BOX_CHANCE, WALL_CHANCE, TILE_SIZE, IMAGES)
 
     # menu GUI settings, inherited by play_menu, play_options and main_menu
     menu_theme = pygame_menu.themes.Theme(
