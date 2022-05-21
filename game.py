@@ -1,5 +1,6 @@
 # python standard library
 import time                 # timing episode runs
+from typing import Any      # type hinting
 # dependencies
 import numpy as np          # arrays, math
 import pygame               # rendering, human interaction
@@ -39,7 +40,7 @@ class Game:
         self.waitSurface = self.font.render('Please Wait', False, (0, 0, 0))
 
     def load_images(self, images: list[str]) -> None:
-        """load all images in list :param images: to attribute self.loadedImgs"""
+        """Loads all images in list :param images: to attribute self.loadedImgs"""
         self.loadedImgs: dict[str, pygame.Surface] = {}
         for img in images:
             imgName=img.replace('\\','/').split('/')
@@ -53,7 +54,7 @@ class Game:
     def set_render(self, _, c: str): self.render = c    # called from pygame menu
 
     def draw(self):
-        
+        """Renders a frame on pygame window"""
         if self.render or self.alg == 'Player' or self.wait_bg:
             self.display.fill(BACKGROUND)
             self.env.render(self.loadedImgs, self.tile_size, self.display)
@@ -68,87 +69,6 @@ class Game:
                 self.wait_bg = False
 
             pygame.display.update()
-
-    def main(self):
-        n_iteration = 1
-        n_episodes = 50
-        max_n_crates = 8
-
-        alpha: int = 1                  # learning rate (update rule)
-        gamma: float = 0.99             # discount rate (update rule)
-        epsilon: float = 0.1            # exploration rate (action selection)
-        n_planning_updates: int = 10    # model-based reinforcement learning
-
-        for crate_count in np.arange(1, max_n_crates):   # train agent for each number of crates
-            self.wait_bg = 1 - self.render
-            
-            if self.alg == 'Player':
-                self.env = Environment(*self.grid_size, self.wall_chance, self.crate_chance)
-            elif self.alg == 'PrioritizedSweepingAgent':
-                self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count, seed=42)
-            else:
-                self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count)
-
-            data = {
-                'Player': [Player, 15, [(self.env.x,self.env.y)], self.loadedImgs['player']],
-                    
-                'PrioritizedSweepingAgent':[PrioritizedSweepingAgent, 0, 
-                [self.env.n_states, self.env.action_size(), alpha, gamma, (self.env.x,self.env.y)], self.loadedImgs['agent']],
-                    
-                None:[Random, 0, [(self.env.x,self.env.y)], self.loadedImgs['agent']]
-                }
-
-            agent, fps, args, imgs = data[self.alg] # unpack data based on algorithm chosen
-
-            for _ in range(n_iteration):
-                self.agent = agent(*args)           # initialize Agent based on specific arguments
-                self.agent.load_animations(imgs)
-                
-                best_actions = []
-                best_c_r = float('-inf')                # best run => least negative cumulative reward
-
-                for ep in range(n_episodes):
-                    actions = []
-                    c_r = 0
-                    self.agent,s = self.env.reset(self.agent)
-                    self.draw()
-                    while self.agent.alive and 2 in self.env.grid:
-                    
-                        self.clock.tick(fps)
-                        dt = self.clock.get_fps()
-
-                        a = self.agent.select_action(s,epsilon)
-                        actions.append(a)
-                        
-                        reward,next_state = self.env.step(a,self.agent,dt,self.draw)
-                        if self.agent.type == 'PrioritizedSweepingAgent':
-                            done = len(np.unique(self.env.grid, return_counts=True)[1]) == 2
-                            self.agent.update(s,a,reward,next_state,done,n_planning_updates)
-                        s = next_state
-                        c_r += reward
-
-                    if c_r > best_c_r and self.agent.type == 'PrioritizedSweepingAgent':
-                        best_c_r = c_r
-                        best_actions = actions
-
-                    if self.agent.type ==  'Player':
-                        self.game_over(fps)
-                        break
-                    elif self.agent.type == 'PrioritizedSweepingAgent':
-                        while True:
-                            if done:
-                                break
-                            self.env.step(4,self.agent,dt,self.draw)
-                        print(f'episode: {ep}, number of actions: {len(actions)}, reward: {c_r}')
-                else:
-                    print('Done')
-                    continue
-                break
-            else:
-                if actions != None:
-                    self.render_best(best_actions, best_c_r)
-                continue
-            break
 
     def render_best(self, actions: list[int], r: int) -> None:
         """
@@ -170,7 +90,6 @@ class Game:
         self.game_over(15)
         self.render = backup_render
 
-
     def game_over(self, fps: float):
         self.clock.tick(fps)
         dt = self.clock.get_fps()
@@ -190,3 +109,96 @@ class Game:
             pygame.display.update()
             time.sleep(2)
         self.draw()
+
+    def main(self):
+        n_repetitions = 1
+        n_episodes = 50
+        max_n_crates = 8
+        alpha: int = 1                  # learning rate (update rule)
+        gamma: float = 0.99             # discount rate (update rule)
+        epsilon: float = 0.1            # exploration rate (action selection)
+        n_planning_updates: int = 10    # model-based reinforcement learning
+
+        for crate_count in np.arange(1, max_n_crates):   # train agent for each number of crates
+            self.wait_bg = 1 - self.render
+            
+            agent, fps, args, imgs = self.experiment_setup(crate_count, alpha, gamma)
+
+            for _ in range(n_repetitions):
+                self.agent = agent(*args)           # initialize Agent based on specific arguments
+                self.agent.load_animations(imgs)
+                
+                best_actions = []
+                best_c_r = float('-inf')            # best run => least negative cumulative reward
+
+                for ep in range(n_episodes):
+                    c_r, actions, done, dt = self.playout(fps, epsilon, n_planning_updates)
+
+                    if c_r > best_c_r and self.agent.type == 'PrioritizedSweepingAgent':
+                        best_c_r, best_actions = c_r, actions
+
+                    if self.agent.type == 'Player':
+                        self.game_over(fps)
+                        break
+                    elif self.agent.type in {'PrioritizedSweepingAgent', 'Random'}:     # can be replaced by else later on
+                        print(f'episode: {ep}, number of actions: {len(actions)}, reward: {c_r}')
+                else:               # if loop was not broken out of, i.e. agent = RL or random
+                    print('Done')
+                    continue        # move to next episode
+                break               # else, break out of "crate_count" loop and return to menu
+            else:
+                if actions != None:
+                    self.render_best(best_actions, best_c_r)
+                continue
+            break
+
+    def playout(self, fps: float, epsilon: float, n_planning_updates: int) -> tuple[int, list[int], bool, int]:
+        """
+        Does one playout of an episode
+        ---
+        Returns cumulative reward, list of actions taken, and whether the agent is done
+        """
+        done: bool = False
+        actions: list[int] = []
+        c_r: int = 0
+        self.agent, s = self.env.reset(self.agent)
+        self.draw()
+        while self.agent.alive and 2 in self.env.grid:
+            self.clock.tick(fps)
+            dt = self.clock.get_fps()
+
+            a = self.agent.select_action(s, epsilon)
+            actions.append(a)
+            reward, next_state = self.env.step(a, self.agent, dt, self.draw)
+            
+            if self.agent.type == 'PrioritizedSweepingAgent':
+                done = len(np.unique(self.env.grid, return_counts=True)[1]) == 2
+                self.agent.update(s, a, reward, next_state, done, n_planning_updates)
+            s = next_state
+            c_r += reward
+        
+        return c_r, actions, done, dt
+
+
+    def experiment_setup(self, crate_count: int, alpha: float, gamma: float) -> tuple[Agent, float, list[Any], list[pygame.Surface]]:
+        """Very ugly function you do not want to interact with"""
+        if self.alg == 'Player':
+            self.env = Environment(*self.grid_size, self.wall_chance, self.crate_chance)
+            while not 2 in self.env.grid:
+                self.env = Environment(*self.grid_size, self.wall_chance, self.crate_chance)
+        elif self.alg == 'PrioritizedSweepingAgent':
+            self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count, seed=42)
+        else:
+            self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count)
+
+        data = {
+            'Player': [Player, 15, [(self.env.x, self.env.y)], self.loadedImgs['player']],
+                
+            'PrioritizedSweepingAgent':[PrioritizedSweepingAgent, 0, 
+            [self.env.n_states, self.env.action_size(), alpha, gamma, (self.env.x,self.env.y)], self.loadedImgs['agent']],
+                
+            None:[Random, 0, [(self.env.x,self.env.y)], self.loadedImgs['agent']]
+            }
+
+        agent, fps, args, imgs = data[self.alg] # unpack data based on algorithm chosen
+        return (agent, fps, args, imgs)
