@@ -25,7 +25,7 @@ explosion_images = []
 # TEXT_LOSE = font.render('GAME OVER', False, (0, 0, 0))
 # TEXT_WIN = font.render('WIN', False, (0, 0, 0))
 
-class game:
+class Game:
     def __init__(self,grid_size, box_chance, wall_chance, tile_size,images):
 
         # print(grid)

@@ -1,161 +1,135 @@
-import pygame
-import pygame_menu
-import glob
-import numpy as np
-import game
+"""
+Bomberman RL: Menu
+------------------
+Script that should be called
+to run the experiment with pygame rendering
+------------------
+Authors: Ayush Kandhai, Josef Hamelink
+Date: May 2022
+"""
 
-WIDTH = 5
-HEIGHT = 5
-GRID_SIZE = np.array([WIDTH+2, HEIGHT+2], dtype=int)
-WALL_CHANCE, BOX_CHANCE = 0.18, .45
-FONT_SIZE = 18
+import glob                 # importing image files
+import numpy as np          # arrays
+import pygame, pygame_menu  # rendering
+from game import Game       # script for running game
 
-COLOR_BACKGROUND = (153, 153, 255)
+def main():
+    main_menu = menu_config()
+    menu_loop(main_menu)
+
+# ------------ #
+#   CONSTANTS  #
+# ------------ #
+
+WIDTH = 5           # world width (excluding walls)
+HEIGHT = 5          # world height (excluding walls)
+GRID_SIZE = np.array([WIDTH+2, HEIGHT+2], dtype=int)    # np.ndarray for math operations
+
+WALL_CHANCE = .18   # determines how many walls are spawned at start of the game
+BOX_CHANCE = .45    # determines how many boxes (or crates) are spawned at start of the game
+
 COLOR_BLACK = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
+COLOR_BACKGROUND = (153, 153, 255)          # indigo
+MENU_BACKGROUND_COLOR = (102, 102, 153)     # aegean
+MENU_TITLE_COLOR = (51, 51, 255)            # cobalt
+
 FPS = 60.0
-MENU_BACKGROUND_COLOR = (102, 102, 153)
-MENU_TITLE_COLOR = (51, 51, 255)
+FONT_SIZE = 18
 
 pygame.display.init()
-pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 INFO = pygame.display.Info()
+TILE_SIZE = int((INFO.current_h*0.95) / GRID_SIZE[1])
+WINDOW_SIZE: np.ndarray = GRID_SIZE * TILE_SIZE
+SURFACE = pygame.display.set_mode(WINDOW_SIZE)
 
-tile_size = int((INFO.current_h*0.95)/GRID_SIZE[1])
-window_size = GRID_SIZE*tile_size
-
-# en1_alg = Algorithm.DIJKSTRA
-# en2_alg = Algorithm.DFS
-# en3_alg = Algorithm.DIJKSTRA
-
-surface = pygame.display.set_mode(window_size)
-
-# def change_enemy1(value, c):
-#     global en1_alg
-#     en1_alg = c
-
-
-# def change_enemy2(value, c):
-#     global en2_alg
-#     en2_alg = c
-
-
-# def change_enemy3(value, c):
-#     global en3_alg
-#     en3_alg = c
+# ------------ #
+#   functions  #
+# ------------ #
 
 def main_background():
-    global surface
-    surface.fill(COLOR_BACKGROUND)
+    global SURFACE; SURFACE.fill(COLOR_BACKGROUND)
 
-
-def menu_loop():
+def menu_config() -> pygame_menu.Menu:
     pygame.init()
-    images = glob.glob("images/**/*.png")
-    images = sorted(images)
-
-    menu_percentage = 0.9  #percentage of window to use as Menu
-    Game = game.game(GRID_SIZE, BOX_CHANCE, WALL_CHANCE, tile_size,images)
-
+    images: list[str] = glob.glob("images/**/*.png")    # load in image files
+    images = sorted(images)                             # prevents OS specific issues
+    menu_percentage = 0.9                               # % of window to use as menu
     pygame.display.set_caption('Bomberman')
-    clock = pygame.time.Clock()
 
+    # create the "Game" instance
+    game = Game(GRID_SIZE, BOX_CHANCE, WALL_CHANCE, TILE_SIZE, images)
+
+    # menu GUI settings, inherited by play_menu, play_options and main_menu
     menu_theme = pygame_menu.themes.Theme(
-        selection_color=COLOR_WHITE,
-        widget_font=pygame_menu.font.FONT_BEBAS,
-        title_font_size=FONT_SIZE,
-        title_font_color=COLOR_BLACK,
-        title_font=pygame_menu.font.FONT_BEBAS,
-        widget_font_color=COLOR_BLACK,
-        widget_font_size=int(FONT_SIZE*0.9),
-        background_color=MENU_BACKGROUND_COLOR,
-        title_background_color=MENU_TITLE_COLOR,
-        widget_font_shadow=False
+        selection_color = COLOR_WHITE,
+        widget_font = pygame_menu.font.FONT_BEBAS,
+        title_font_size = FONT_SIZE,
+        title_font_color = COLOR_BLACK,
+        title_font = pygame_menu.font.FONT_BEBAS,
+        widget_font_color = COLOR_BLACK,
+        widget_font_size = int(FONT_SIZE * 0.9),
+        background_color = MENU_BACKGROUND_COLOR,
+        title_background_color = MENU_TITLE_COLOR,
+        widget_font_shadow = False
     )
 
     play_menu = pygame_menu.Menu(
-        theme=menu_theme,
-        height=int(window_size[1] * menu_percentage),
-        width=int(window_size[0] * menu_percentage),
-        title='Play menu'
+        theme = menu_theme,
+        height = int(WINDOW_SIZE[1] * menu_percentage),
+        width = int(WINDOW_SIZE[0] * menu_percentage),
+        title = 'Play menu'
+    )
+    play_options = pygame_menu.Menu(
+        theme = menu_theme,
+        height = int(WINDOW_SIZE[1] * menu_percentage),
+        width = int(WINDOW_SIZE[0] * menu_percentage),
+        title = 'Options'
     )
 
-    play_options = pygame_menu.Menu(theme=menu_theme,
-        height=int(window_size[1] * menu_percentage),
-        width=int(window_size[0] * menu_percentage),
-        title='Options'
-    )
-    play_options.add.selector("Character 1", [("Player", "Player"), ("Prioritized Sweeping Agent", "PrioritizedSweepingAgent"),
-                                                 ("Random", None)], onchange=Game.set_alg)
-    # play_options.add.selector("Character 2", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),
-    #                                           ("None", Algorithm.NONE)], onchange=change_enemy1)
-    # play_options.add.selector("Character 3", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),
-    #                                           ("None", Algorithm.NONE)], onchange=change_enemy2,  default=1)
-    # play_options.add.selector("Character 4", [("DIJKSTRA", Algorithm.DIJKSTRA), ("DFS", Algorithm.DFS),
-    #                                           ("None", Algorithm.NONE)], onchange=change_enemy3)
-    play_options.add.selector("Render (Agent Only)", [("Yes", True), ("No", False)], onchange=Game.set_render)
+    play_options.add.selector("Character 1",
+            [("Player", "Player"),
+            ("Prioritized Sweeping Agent", "PrioritizedSweepingAgent"),
+            ("Random", None)],
+            onchange=game.set_alg)
+    play_options.add.selector("Render (Agent Only)",
+            [("Yes", True),
+            ("No", False)],
+            onchange=game.set_render)
+    play_options.add.button('Back',
+            pygame_menu.events.BACK)
 
-    play_options.add.button('Back', pygame_menu.events.BACK)
-
-    play_menu.add.button('Start',
-                         Game.main)
-
+    play_menu.add.button('Start', game.main)
     play_menu.add.button('Options', play_options)
     play_menu.add.button('Return  to  main  menu', pygame_menu.events.BACK)
 
-    about_menu_theme = pygame_menu.themes.Theme(
-        selection_color=COLOR_BLACK,
-        widget_font=pygame_menu.font.FONT_BEBAS,
-        title_font_size=FONT_SIZE,
-        title_font_color=COLOR_BLACK,
-        title_font=pygame_menu.font.FONT_BEBAS,
-        widget_font_color=COLOR_BLACK,
-        widget_font_size=int(FONT_SIZE*0.7),
-        background_color=MENU_BACKGROUND_COLOR,
-        title_background_color=MENU_TITLE_COLOR,
-        widget_font_shadow=False
-    )
-
-    about_menu = pygame_menu.Menu(theme=about_menu_theme,
-        height=int(window_size[1] * menu_percentage),
-        width=int(window_size[0] * menu_percentage),
-        title='About'
-    )
-    about_menu.add.label("Player_controls: ")
-    about_menu.add.label("Movement:_Arrows")
-    about_menu.add.label("Plant bomb:_Space")
-    about_menu.add.label("Author:_Michal_Sliwa")
-    about_menu.add.label("Sprite: ")
-
-    about_menu.add.label("https://opengameart.org/content")
-    about_menu.add.label("/bomb-party-the-complete-set")
-
+    # create the main "Menu" instance that contains all information
     main_menu = pygame_menu.Menu(
-        theme=menu_theme,
-        height=int(window_size[1] * menu_percentage),
-        width=int(window_size[0] * menu_percentage),
-        title='Main menu'
+        theme = menu_theme,
+        height = int(WINDOW_SIZE[1] * menu_percentage),
+        width = int(WINDOW_SIZE[0] * menu_percentage),
+        title = 'Main menu'
     )
 
     main_menu.add.button('Play', play_menu)
-    main_menu.add.button('About', about_menu)
     main_menu.add.button('Quit', pygame_menu.events.EXIT)
+    
+    return main_menu
+
+def menu_loop(main_menu: pygame_menu.Menu) -> None:
+    clock = pygame.time.Clock()
+    
     while True:
-
         clock.tick(FPS)
-
         main_background()
-
         events = pygame.event.get()
         for event in events:
-            if event.type == pygame.QUIT:
-                exit()
+            if event.type == pygame.QUIT: exit()
 
-        main_menu.mainloop(surface, main_background, disable_loop=False, fps_limit=0)
+        main_menu.mainloop(SURFACE, main_background, disable_loop=False, fps_limit=0)
         main_menu.update(events)
-        main_menu.draw(surface)
-
+        main_menu.draw(SURFACE)
         pygame.display.flip()
 
-
-menu_loop()
+if __name__ == "__main__":
+    main()
