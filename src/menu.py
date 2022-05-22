@@ -18,7 +18,10 @@ import numpy as np              # arrays
 import pygame, pygame_menu      # rendering, human interaction
 # local imports
 from parse import ParseWrapper  # outsourcing argument parsing
+from helper import fix_dirs     # making directory system foolproof
 from game import Game           # script for running the game
+
+fix_dirs()
 
 def main():
     main_menu = menu_config()
@@ -30,7 +33,7 @@ def main():
 
 # parsed
 parser = argparse.ArgumentParser()
-DIMENSIONS, MAX_N_CRATES, CRATE_CHANCE, WALL_CHANCE, REPETITIONS, EPISODES, AGENT, FAST = ParseWrapper(parser)()
+DIMENSIONS, MAX_N_CRATES, CRATE_CHANCE, WALL_CHANCE, REPETITIONS, EPISODES, AGENT, FAST, OVERWRITE = ParseWrapper(parser)()
 
 # TODO add bomb range arg?
 
@@ -80,6 +83,7 @@ def menu_config() -> pygame_menu.Menu:
 
     if AGENT: game.set_alg('hello world', 'PrioritizedSweepingAgent')
     if FAST: game.set_render('bye rendering', False)
+    if OVERWRITE: game.set_overwrite('just for fun', True)
 
     # menu GUI settings, inherited by play_menu, play_options and main_menu
     menu_theme = pygame_menu.themes.Theme(

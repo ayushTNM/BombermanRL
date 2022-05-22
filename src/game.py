@@ -1,13 +1,15 @@
 # python standard library
-import time                 # timing episode runs
-from typing import Any      # type hinting
+import time                     # timing episode runs
+from datetime import datetime   # displaying experiment start time
+from typing import Any          # type hinting
 # dependencies
-import numpy as np          # arrays, math
-import pygame               # rendering, human interaction
+import numpy as np              # arrays, math
+import pygame                   # rendering, human interaction
 # local imports
 from environment import Environment                             # obtaining rewards for agent
 from agent import Agent                                         # type hinting
 from agent import Player, PrioritizedSweepingAgent, Random      # implementations
+from helper import LearningCurvePlot, ProgressBar               # results plotting, progress visualization
 
 BACKGROUND = (107, 142, 35)     # moss green
 
@@ -30,9 +32,10 @@ class Game:
         self.epsilon = epsilon
         self.n_planning_updates = n_planning_updates
 
-        # these can be modified from pygame menu
-        self.render = True
+        # these can be modified from pygame menu or CLI arguments
         self.alg = 'Player'
+        self.render = True
+        self.overwrite = False
 
         self.agent = None
         self.wait_bg = False
@@ -59,8 +62,9 @@ class Game:
             scaledImg: pygame.Surface = pygame.transform.scale(loadedImg, (self.tile_size, self.tile_size))
             self.loadedImgs[folder].update({imgName[-1].split('.')[-2]:scaledImg})
 
-    def set_alg(self, _, c: str): self.alg = c          # called from pygame menu
-    def set_render(self, _, c: str): self.render = c    # called from pygame menu
+    def set_alg(self, _, c: str): self.alg = c              # called from pygame menu
+    def set_render(self, _, c: bool): self.render = c       # called from pygame menu
+    def set_overwrite(self, _, c: bool): self.overwrite = c # called from argparse
 
     def draw(self):
         """Renders a frame on pygame window"""
@@ -70,11 +74,15 @@ class Game:
 
             if self.agent.alive:
                 self.display.blit(self.agent.animation[self.agent.direction][self.agent.frame],
-                    (self.agent.x * (self.tile_size / self.agent.step), self.agent.y * (self.tile_size / self.agent.step), self.tile_size, self.tile_size))
+                                  (self.agent.x * (self.tile_size / self.agent.step),
+                                   self.agent.y * (self.tile_size / self.agent.step),
+                                   self.tile_size, self.tile_size))
             if self.wait_bg:
                 font_w = self.waitSurface.get_width()
                 font_h = self.waitSurface.get_height()
-                self.display.blit(self.waitSurface, (self.display.get_width() // 2 - font_w//2,  self.display.get_height() // 2 - font_h//2))
+                self.display.blit(self.waitSurface,
+                                  (self.display.get_width() // 2 - font_w//2,
+                                   self.display.get_height() // 2 - font_h//2))
                 self.wait_bg = False
 
             pygame.display.update()
@@ -89,7 +97,6 @@ class Game:
         self.env.reset(self.agent)
         self.draw()
         time.sleep(1)
-        print('least steps:',len(actions),'bombs:',sum(np.array(actions)==5),'r:',r)
         while len(actions)>0:
             self.clock.tick(15)
             dt = self.clock.get_fps()
@@ -100,13 +107,22 @@ class Game:
         self.render = backup_render
 
     def main(self):
+        RL: bool = True if self.alg == 'PrioritizedSweepingAgent' else False    # used to toggle a lot of game behavior
+
+        if RL:
+            plot = LearningCurvePlot(title=f'Learning curve')
+            start: float = time.perf_counter()              # <-- timer start
+            print(f'\nStarting experiment at {datetime.now().strftime("%H:%M:%S")}')        
 
         for crate_count in np.arange(1, self.max_n_crates+1):   # train agent for each number of crates
             self.wait_bg = 1 - self.render
             
             agent, self.fps, args, imgs = self.experiment_setup(crate_count)
+            if RL:
+                rewards = np.zeros(shape=(self.n_repetitions, self.n_episodes))
+                progress = ProgressBar(self.n_repetitions, process_name=f'{crate_count} crates')
 
-            for _ in range(self.n_repetitions):
+            for rep in range(self.n_repetitions):
                 self.agent = agent(*args)           # initialize Agent based on specific arguments
                 self.agent.load_animations(imgs)
                 
@@ -115,6 +131,7 @@ class Game:
 
                 for ep in range(self.n_episodes):
                     c_r, actions = self.playout()
+                    if RL: rewards[rep,ep] = c_r
 
                     if c_r > best_c_r and self.agent.type == 'PrioritizedSweepingAgent':
                         best_c_r, best_actions = c_r, actions
@@ -123,16 +140,26 @@ class Game:
                         self.game_over()
                         break
                     elif self.agent.type in {'PrioritizedSweepingAgent', 'Random'}:     # can be replaced by else later on
-                        print(f'episode: {ep}, number of actions: {len(actions)}, reward: {c_r}')
+                        pass
                 else:               # if loop was not broken out of, i.e. agent = RL or random
-                    print('Done')
+                    progress(rep)
                     continue        # move to next episode
                 break               # else, break out of "crate_count" loop and return to menu
-            else:                   # if last episode has been reach (agent = RL or random)
-                if actions != None:
+            else:                   # if last episode has been reached (agent = RL or random)
+                avg_r_per_episode: np.array = np.average(rewards, axis=0)
+                plot.add_curve(data=avg_r_per_episode, color_index=crate_count-1, label=f'{crate_count} crates')
+                if actions != None and self.render == True:
                     self.render_best(best_actions, best_c_r)
                 continue
             break
+
+        if RL:
+            end: float = time.perf_counter()                # <-- timer end
+            minutes: int = int((end-start) // 60)
+            seconds: float = round((end-start) % 60, 1)
+            stringtime: str = f'{minutes}:{str(seconds).zfill(4)} min' if minutes else f'{seconds} sec'
+            print(f'\nExperiment finished in {stringtime}\n')
+            plot.save(name='learningcurves', overwrite=self.overwrite)
 
     def playout(self) -> tuple[int, list[int]]:
         """

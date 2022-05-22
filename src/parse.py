@@ -6,7 +6,7 @@ class ParseWrapper:
         'C': (1, 8),
         'c': (5, 25),
         'w': (0, 50),
-        'r': (1, 10),
+        'r': (1, 100),
         'e': (10, 1000)
     }
     valid_long: dict[str, tuple[int, int]] = {
@@ -14,7 +14,7 @@ class ParseWrapper:
         'max_crate_count': (1, 8),
         'crate_density': (5, 50),
         'wall_density': (0, 50),
-        'repetitions': (1, 10),
+        'repetitions': (1, 100),
         'episodes': (10, 1000)
     }
 
@@ -23,7 +23,7 @@ class ParseWrapper:
         parser.add_argument('-d', '--grid_dimensions', type=int, default=5,
                             help=("dimensions of the environment " +
                             f"[{self.valid['d'][0]}-{self.valid['d'][1]}] "))
-        parser.add_argument('-C', '--max_crate_count', type=int, default=8,
+        parser.add_argument('-C', '--max_crate_count', type=int, default=6,
                             help=("largest number of crates on the board the agent should try to solve " +
                             f"[{self.valid['C'][0]}-{self.valid['C'][1]}]"))
         parser.add_argument('-c', '--crate_density', type=int, default=45,
@@ -43,6 +43,8 @@ class ParseWrapper:
                             help=f"flag to set agent to RL agent")
         parser.add_argument('-f', '--fast', action='store_true', default=False,
                             help=f"flag to turn off rendering for speed boost")
+        parser.add_argument('-o', '--overwrite', action='store_true', default=False,
+                            help=f"flag to turn off asking for plot overwrite permissions")
 
         self.args = parser.parse_args()
         self.argdict = vars(self.args)
