@@ -10,6 +10,7 @@ Date: May 2022
 """
 
 # python standard library
+import os                       # directories
 import glob                     # locating image files
 import argparse                 # quicker experiment setup
 # dependencies
@@ -57,8 +58,7 @@ INFO = pygame.display.Info()
 TILE_SIZE = int((INFO.current_h*0.95) / GRID_SIZE[1])
 WINDOW_SIZE = GRID_SIZE * TILE_SIZE
 SURFACE = pygame.display.set_mode(WINDOW_SIZE)
-IMAGES: list[str] = glob.glob('images/**/*.png')    # load in image files
-IMAGES = sorted(IMAGES)                             # prevents OS specific issues
+IMAGES: list[str] = sorted(glob.glob(os.path.join('..','images','**','*.png'))) # load in image files
 
 # ------------- #
 #   functions   #
