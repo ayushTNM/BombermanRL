@@ -6,6 +6,7 @@ from collections import Counter, OrderedDict    # data processing
 # dependencies
 import numpy as np                              # arrays, math
 import matplotlib.pyplot as plt                 # plotting
+from scipy.signal import savgol_filter          # smoothing plots
 
 def fix_dirs() -> None:
     """Changes cwd to src, and creates a results dir on the same level if not already present"""
@@ -65,7 +66,7 @@ class LearningCurvePlot:
         
     def add_curve(self, data: np.ndarray, color_index: int = 0, label: str = None) -> None:
         """Adds a vector with results to the plot"""
-        self.ax.plot(data, label=label, color=self.colors[color_index])
+        self.ax.plot(savgol_filter(data, data.shape[0]//10, 1), label=label, color=self.colors[color_index])
         self.ax.axhline(y=max(data), color=self.colors[color_index], linestyle=':', alpha=.3)
         
     def save(self, name: str = 'placeholder', overwrite: bool = False):
