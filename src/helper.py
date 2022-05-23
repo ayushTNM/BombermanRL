@@ -1,8 +1,6 @@
 # python standard library
-import os
-import sys
-import re   
-from collections import Counter, OrderedDict    # data processing
+import os, sys, re                  # directories
+from datetime import datetime       # saving raw results
 # dependencies
 import numpy as np                              # arrays, math
 import matplotlib.pyplot as plt                 # plotting
@@ -22,6 +20,8 @@ def fix_dirs() -> None:
               f'Consider running "{caller}" from "src" dir next time.')
     if not os.path.exists(results_dir := os.path.join(cwd, '..', 'results')):
         os.mkdir(results_dir)
+    if not os.path.exists(npz_dir := os.path.join(cwd, '..', 'npz')):
+        os.mkdir(npz_dir)
 
 class ProgressBar:
     frames = [f'\033[32m\033[1m{s}\033[0m' for s in ['╀', '╄', '┾', '╆', '╁', '╅', '┽', '╃']]   # spinner frames
@@ -60,9 +60,11 @@ class LearningCurvePlot:
         self.ax.set_xlabel('Episode')
         self.ax.set_ylabel('Cumulative reward')
         self.ax.set_title(title)
+        self.plotting_data = dict()
         
     def add_curve(self, data: np.ndarray, color_index: int = 0, label: str = None) -> None:
         """Adds a vector with results to the plot"""
+        self.plotting_data.update({label: data})
         self.ax.plot(data, color=self.colors[color_index], alpha = 0.3)
         smoothing = data.shape[0]//10 + (1+ (data.shape[0]//10) % 2)
         self.ax.plot(savgol_filter(data, smoothing, 1), label=label, color=self.colors[color_index])
@@ -80,4 +82,6 @@ class LearningCurvePlot:
         else:
             self.fig.savefig(os.path.join('..','results',f'{name}.png'), dpi=300)
             print(f'Figure {name}.png saved successfully')
+        timestamp: str = str(datetime.now())[5:16].replace(':', '')
+        np.savez(os.path.join('..','npz',f'({len(self.plotting_data)}) {timestamp}.npz'), **self.plotting_data)
         exit()

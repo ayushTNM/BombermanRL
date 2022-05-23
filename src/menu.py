@@ -33,16 +33,15 @@ def main():
 
 # parsed
 parser = argparse.ArgumentParser()
-DIMENSIONS, BOMB_RANGE, MAX_N_CRATES, CRATE_CHANCE, WALL_CHANCE, REPETITIONS, EPISODES, OUTPUT = ParseWrapper(parser)()
+args = ParseWrapper(parser)()
+DIMENSIONS, BOMB_RANGE, MAX_N_CRATES = args[0], args[1], args[2]
+CRATE_CHANCE, WALL_CHANCE = args[3], args[4]
+REPETITIONS, EPISODES = args[5], args[6]
+ALPHA, GAMMA, EPSILON, N_PLANNING_UPDATES = args[7], args[8], args[9], args[10]
+OUTPUT = args[11]
 
 WIDTH = HEIGHT = DIMENSIONS                              # world dimensions (excluding border walls)
 GRID_SIZE = np.array([WIDTH+2, HEIGHT+2], dtype=int)     # np.ndarray for math operations
-
-# RL agent
-ALPHA: float = 1.0              # learning rate (update rule)
-GAMMA: float = .99              # discount rate (update rule)
-EPSILON: float = 0.2            # exploration rate (action selection)
-N_PLANNING_UPDATES: int = 10    # model-based reinforcement learning
 
 # colors
 COLOR_BLACK = (0, 0, 0)
