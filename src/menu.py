@@ -32,7 +32,7 @@ def main():
 # ------------- #
 
 # parsed
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 args = ParseWrapper(parser)()
 DIMENSIONS, BOMB_RANGE, MAX_N_CRATES = args[0], args[1], args[2]
 CRATE_CHANCE, WALL_CHANCE = args[3], args[4]

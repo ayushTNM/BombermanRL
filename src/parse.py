@@ -2,19 +2,7 @@ import argparse
 from typing import Union
 
 class ParseWrapper:
-    valid: dict[str, tuple[Union[int, float]]] = {
-        'd': (3, 10),
-        'b': (1, 9),
-        'C': (1, 5),
-        'c': (5, 50),
-        'w': (0, 50),
-        'r': (1, 100),
-        'e': (10, 1000),
-        'A': (0.5, 2.0),
-        'E': (0.01, 0.25),
-        'G': (0.9, 1.0),
-        'N': (1, 10)
-    }
+
     valid_long: dict[str, tuple[Union[int, float]]] = {
         'grid_dimensions': (3, 10),
         'bomb_range': (1, 9),
@@ -28,6 +16,9 @@ class ParseWrapper:
         'gamma': (0.9, 1.0),
         'n_planning_updates': (1, 10)
     }
+
+    short_args = ['d', 'b', 'C', 'c', 'w', 'r', 'e', 'A', 'E', 'G', 'N']
+    valid: dict[str, tuple[Union[int, float]]] = dict(zip(short_args, list(valid_long.values())))
 
     def __init__(self, parser: argparse.ArgumentParser) -> None:
 
@@ -62,9 +53,9 @@ class ParseWrapper:
         parser.add_argument('-E', '--epsilon', type=float, default=0.05,
                             help=("learning rate " +
                             f"[{self.valid['E'][0]}-{self.valid['E'][1]}]"))
-        parser.add_argument('-N', '--n_planning_updates', type=int, default=5,
+        parser.add_argument('-N', '--n_planning_updates', type=int, default=10,
                             help=("number of planning updates " +
-                            f"[{self.valid['E'][0]}-{self.valid['E'][1]}]"))
+                            f"[{self.valid['N'][0]}-{self.valid['N'][1]}]"))
         parser.add_argument('-o', '--output', type=str, default='placeholder',
                             help=f"name of output plot file (don't put .png)")
 
