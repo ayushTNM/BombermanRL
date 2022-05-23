@@ -1,10 +1,8 @@
 import argparse
-from typing import TypeAlias, Union
-
-num: TypeAlias = Union[int, float]
+from typing import Union
 
 class ParseWrapper:
-    valid: dict[str, tuple[num, num]] = {
+    valid: dict[str, tuple[Union[int, float]]] = {
         'd': (3, 10),
         'b': (1, 9),
         'C': (1, 5),
@@ -17,7 +15,7 @@ class ParseWrapper:
         'G': (0.9, 1.0),
         'N': (1, 10)
     }
-    valid_long: dict[str, tuple[num, num]] = {
+    valid_long: dict[str, tuple[Union[int, float]]] = {
         'grid_dimensions': (3, 10),
         'bomb_range': (1, 9),
         'max_crate_count': (1, 5),
