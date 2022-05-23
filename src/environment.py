@@ -9,8 +9,8 @@ from agent import Agent                 # type hinting
 
 class Environment(object):
     
-    def __init__(self, width: int, height: int, wall_chance: float, crate_chance: float = 0,
-                 crate_count: int = 0, seed: int = None):
+    def __init__(self, width: int, height: int, wall_chance: float, crate_chance: float = -1,
+                 crate_count: int = -1, seed: int = None):
         
         self.width = width
         self.height = height
@@ -35,10 +35,10 @@ class Environment(object):
         self.create_grid()
         self.find_start_location()
 
-        mask = (np.arange(self.grid.shape[0])[np.newaxis,:]-self.x)**2 + (np.arange(self.grid.shape[0])[:,np.newaxis]-self.y)**2 >= 2**2
-        mask = np.bitwise_and(self.reachable,mask)
-        crate_idxs=np.array(list(zip(*np.where(mask.T == True))))
-        if self.crate_chance == 0:
+        mask = (np.arange(self.grid.shape[0])[np.newaxis,:]-self.x)**2 + (np.arange(self.grid.shape[1])[:,np.newaxis]-self.y)**2 >= 2**2
+        mask = np.bitwise_and(self.reachable,mask,dtype=int)
+        crate_idxs=np.array(list(zip(*np.where(mask == True))))
+        if self.crate_chance == -1:
             self.crate_locs = crate_idxs[self.rng.choice(len(crate_idxs),self.crate_count,replace=False)]
         else:
             self.crate_locs = crate_idxs[self.rng.random(len(crate_idxs))< self.wall_chance]
@@ -57,8 +57,7 @@ class Environment(object):
 
     def find_start_location(self) -> None:
         count: int = 0
-        free_idxs = list(zip(*np.where(self.grid==0)))
-        x, y = free_idxs[self.rng.integers(len(free_idxs))]
+        x, y = self.free_idxs[self.rng.integers(len(self.free_idxs))]
         self.find_reachable_spaces((x, y))
         while(np.sum(self.reachable) < np.sum(self.grid == 1) * (1-(self.wall_chance+.2))):
             count += 1
@@ -67,13 +66,13 @@ class Environment(object):
                 exit()
             elif count % max(self.shape-2)//4 == 0:
                 self.create_grid()
-                free_idxs = list(zip(*np.where(self.grid==0)))
-            x, y = free_idxs[self.rng.integers(len(free_idxs))]
+            x, y = self.free_idxs[self.rng.integers(len(self.free_idxs))]
             self.find_reachable_spaces((x, y))
         self.x, self.y = x, y
 
     def step(self, action, agent, dt: int, draw: Callable) -> tuple[int, Optional[int]]:
-        r =- 1
+        r = -1
+        r -= (action==5)
         movement_actions = [(0,1), (1,0), (0,-1), (-1,0)]
         direction = agent.direction
         movement = False
@@ -102,7 +101,7 @@ class Environment(object):
         if not movement:
             agent.frame = 0
         draw()
-        r += self.update_bombs(dt)
+        r += 2 * self.update_bombs(dt)
         if agent.type == "PrioritizedSweepingAgent":
             self.exploded_crates[self.grid[tuple([*self.crate_locs.T])] != 2] =1
             return r, self.to_state(agent.get_coords())

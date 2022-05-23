@@ -33,9 +33,7 @@ def main():
 
 # parsed
 parser = argparse.ArgumentParser()
-DIMENSIONS, MAX_N_CRATES, CRATE_CHANCE, WALL_CHANCE, REPETITIONS, EPISODES, AGENT, FAST, OVERWRITE = ParseWrapper(parser)()
-
-# TODO add bomb range arg?
+DIMENSIONS, BOMB_RANGE, MAX_N_CRATES, CRATE_CHANCE, WALL_CHANCE, REPETITIONS, EPISODES, OUTPUT = ParseWrapper(parser)()
 
 WIDTH = HEIGHT = DIMENSIONS                              # world dimensions (excluding border walls)
 GRID_SIZE = np.array([WIDTH+2, HEIGHT+2], dtype=int)     # np.ndarray for math operations
@@ -43,7 +41,7 @@ GRID_SIZE = np.array([WIDTH+2, HEIGHT+2], dtype=int)     # np.ndarray for math o
 # RL agent
 ALPHA: float = 1.0              # learning rate (update rule)
 GAMMA: float = .99              # discount rate (update rule)
-EPSILON: float = 0.1            # exploration rate (action selection)
+EPSILON: float = 0.2            # exploration rate (action selection)
 N_PLANNING_UPDATES: int = 10    # model-based reinforcement learning
 
 # colors
@@ -76,14 +74,10 @@ def menu_config() -> pygame_menu.Menu:
     pygame.display.set_caption('Bomberman')     # window bar caption
 
     # create the Game instance
-    game = Game(GRID_SIZE, REPETITIONS, EPISODES,
+    game = Game(GRID_SIZE, BOMB_RANGE, REPETITIONS, EPISODES,
                 WALL_CHANCE, CRATE_CHANCE, MAX_N_CRATES,
                 ALPHA, GAMMA, EPSILON, N_PLANNING_UPDATES,
-                TILE_SIZE, IMAGES)
-
-    if AGENT: game.set_alg('hello world', 'PrioritizedSweepingAgent')
-    if FAST: game.set_render('bye rendering', False)
-    if OVERWRITE: game.set_overwrite('just for fun', True)
+                TILE_SIZE, IMAGES, OUTPUT)
 
     # menu GUI settings, inherited by play_menu, play_options and main_menu
     menu_theme = pygame_menu.themes.Theme(
@@ -112,15 +106,19 @@ def menu_config() -> pygame_menu.Menu:
         title = 'Options'
     )
 
-    play_options.add.selector('Character 1',
-            [('Player', 'Player'),
-             ('Prioritized Sweeping Agent', 'PrioritizedSweepingAgent'),
-             ('Random', None)],
+    play_options.add.selector('Character',
+            [('Prioritized Sweeping Agent', 'PrioritizedSweepingAgent'),
+             ('Player', 'Player'),
+             ('Random', 'Random')],
             onchange = game.set_alg)
     play_options.add.selector('Render (Agent Only)',
-            [('Yes', True),
-             ('No', False)],
+            [('No', False),
+             ('Yes', True)],
             onchange = game.set_render)
+    play_options.add.selector('Render Best (Agent Only)',
+            [('No', False),
+             ('Yes', True)],
+            onchange = game.set_render_best)
     play_options.add.button('Back',
             pygame_menu.events.BACK)
 

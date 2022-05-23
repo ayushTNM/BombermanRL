@@ -24,28 +24,25 @@ def fix_dirs() -> None:
         os.mkdir(results_dir)
 
 class ProgressBar:
-    # spinner frames
-    frames = ['╀', '╄', '┾', '╆', '╁', '╅', '┽', '╃']
+    frames = [f'\033[32m\033[1m{s}\033[0m' for s in ['╀', '╄', '┾', '╆', '╁', '╅', '┽', '╃']]   # spinner frames
+    done_char = '\033[32m\033[1m━\033[0m'   # green bold ━, reset after
+    todo_char = '\033[31m\033[2m─\033[0m'   # red faint ─, reset after
+    spin_frame = 0
 
     def __init__(self, n_iters: int, process_name: str = 'placeholder') -> None:
         self.n_iters = n_iters
         print(f'Running {n_iters} repetitions for {process_name}...')
+        print('\r' + 50 * self.todo_char + ' ' + self.frames[0] + ' 0%', end='')
 
     def __call__(self, iteration: int) -> None:
         """Updates and displays a progress bar on the command line"""
         percentage = 100 * (iteration+1) // self.n_iters    # floored percentage
         if percentage != 0 and percentage == 100 * iteration // self.n_iters: return
         steps = 50 * (iteration+1) // self.n_iters          # chars representing progress
+        self.spin_frame += 1
 
-        # green char, bold char, reset after
-        format_done = lambda string: f'\033[32m\033[1m{string}\033[0m'
-        # red char, faint char, reset after
-        format_todo = lambda string: f'\033[31m\033[2m{string}\033[0m'
-        done_char = format_done('━')
-        todo_char = format_todo('─')
-
-        spin_char = format_done(self.frames[percentage%8])
-        bar = (steps)*done_char + (50-steps)*todo_char                  # the actual bar
+        spin_char = self.frames[self.spin_frame%8]
+        bar = (steps)*self.done_char + (50-steps)*self.todo_char        # the actual bar
         
         if iteration+1 == self.n_iters: suffix = ' complete\n'
         else: suffix = ' ' + spin_char + ' ' + str(percentage) + '% '	# spinner and percentage
@@ -66,19 +63,21 @@ class LearningCurvePlot:
         
     def add_curve(self, data: np.ndarray, color_index: int = 0, label: str = None) -> None:
         """Adds a vector with results to the plot"""
-        self.ax.plot(savgol_filter(data, data.shape[0]//10, 1), label=label, color=self.colors[color_index])
-        self.ax.axhline(y=max(data), color=self.colors[color_index], linestyle=':', alpha=.3)
+        self.ax.plot(data, color=self.colors[color_index], alpha = 0.3)
+        smoothing = data.shape[0]//10 + (1+ (data.shape[0]//10) % 2)
+        self.ax.plot(savgol_filter(data, smoothing, 1), label=label, color=self.colors[color_index])
         
-    def save(self, name: str = 'placeholder', overwrite: bool = False):
+    def save(self, name: str = 'placeholder') -> None:
         """Saves a figure to results directory with given name"""
         self.ax.legend()
-        if os.path.exists(os.path.join('..','results',f'{name}.png')) and not overwrite:
+        if os.path.exists(os.path.join('..','results',f'{name}.png')):
             yn = '_'
             while yn.lower() not in 'yn':
                 yn = input(f'File "\033[1m{name.split(os.path.sep)[-1]}.png\033[0m" already exists.\nOverwrite? [y/n]: ')
             if yn.lower() == 'y':
                 self.fig.savefig(os.path.join('..','results',f'{name}.png'), dpi=300)
-                print('Figure saved successfully')
+                print(f'Figure {name}.png saved successfully')
         else:
             self.fig.savefig(os.path.join('..','results',f'{name}.png'), dpi=300)
-            print('Figure saved successfully')
+            print(f'Figure {name}.png saved successfully')
+        exit()

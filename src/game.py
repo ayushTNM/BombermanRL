@@ -14,12 +14,13 @@ from helper import LearningCurvePlot, ProgressBar               # results plotti
 BACKGROUND = (107, 142, 35)     # moss green
 
 class Game:
-    def __init__(self, grid_size: np.ndarray, n_repetitions: int, n_episodes: int,
+    def __init__(self, grid_size: np.ndarray, bomb_range: int, n_repetitions: int, n_episodes: int,
                  wall_chance: int, crate_chance: int, max_n_crates: int, 
                  alpha: float, gamma: float, epsilon: float, n_planning_updates: int,
-                 tile_size: int, images: list[str]):
+                 tile_size: int, images: list[str], output: str = 'plot'):
 
         self.grid_size = grid_size
+        self.bomb_range = bomb_range
         self.wall_chance = wall_chance / 100
         self.crate_chance = crate_chance / 100
         self.tile_size = tile_size
@@ -31,11 +32,12 @@ class Game:
         self.gamma = gamma
         self.epsilon = epsilon
         self.n_planning_updates = n_planning_updates
+        self.output_name = output
 
         # these can be modified from pygame menu or CLI arguments
-        self.alg = 'Player'
-        self.render = True
-        self.overwrite = False
+        self.alg = 'PrioritizedSweepingAgent'
+        self.render = False
+        self.render_best = False
 
         self.agent = None
         self.wait_bg = False
@@ -62,9 +64,9 @@ class Game:
             scaledImg: pygame.Surface = pygame.transform.scale(loadedImg, (self.tile_size, self.tile_size))
             self.loadedImgs[folder].update({imgName[-1].split('.')[-2]:scaledImg})
 
-    def set_alg(self, _, c: str): self.alg = c              # called from pygame menu
-    def set_render(self, _, c: bool): self.render = c       # called from pygame menu
-    def set_overwrite(self, _, c: bool): self.overwrite = c # called from argparse
+    def set_alg(self, _, c: str): self.alg = c                      # called from pygame menu
+    def set_render(self, _, c: bool): self.render = c               # called from pygame menu
+    def set_render_best(self, _, c: bool): self.render_best = c     # called from pygame menu
 
     def draw(self):
         """Renders a frame on pygame window"""
@@ -87,7 +89,7 @@ class Game:
 
             pygame.display.update()
 
-    def render_best(self, actions: list[int], r: int) -> None:
+    def replay_best(self, actions: list[int], r: int) -> None:
         """
         After an agent has trained for a number of episodes,
         this function can be used to render the best sequence of actions it has found
@@ -122,12 +124,13 @@ class Game:
                 rewards = np.zeros(shape=(self.n_repetitions, self.n_episodes))
                 progress = ProgressBar(self.n_repetitions, process_name=f'{crate_count} crates')
 
+            best_actions = []
+            best_c_r = float('-inf')                # best run => least negative cumulative reward
+
             for rep in range(self.n_repetitions):
                 self.agent = agent(*args)           # initialize Agent based on specific arguments
                 self.agent.load_animations(imgs)
                 
-                best_actions = []
-                best_c_r = float('-inf')            # best run => least negative cumulative reward
 
                 for ep in range(self.n_episodes):
                     c_r, actions = self.playout()
@@ -139,8 +142,6 @@ class Game:
                     if self.agent.type == 'Player':
                         self.game_over()
                         break
-                    elif self.agent.type in {'PrioritizedSweepingAgent', 'Random'}:     # can be replaced by else later on
-                        pass
                 else:               # if loop was not broken out of, i.e. agent = RL or random
                     progress(rep)
                     continue        # move to next episode
@@ -148,8 +149,8 @@ class Game:
             else:                   # if last episode has been reached (agent = RL or random)
                 avg_r_per_episode: np.array = np.average(rewards, axis=0)
                 plot.add_curve(data=avg_r_per_episode, color_index=crate_count-1, label=f'{crate_count} crates')
-                if actions != None and self.render == True:
-                    self.render_best(best_actions, best_c_r)
+                if actions != None and self.render_best == True:
+                    self.replay_best(best_actions, best_c_r)
                 continue
             break
 
@@ -159,7 +160,7 @@ class Game:
             seconds: float = round((end-start) % 60, 1)
             stringtime: str = f'{minutes}:{str(seconds).zfill(4)} min' if minutes else f'{seconds} sec'
             print(f'\nExperiment finished in {stringtime}\n')
-            plot.save(name='learningcurves', overwrite=self.overwrite)
+            plot.save(name=self.output_name)
 
     def playout(self) -> tuple[int, list[int]]:
         """
@@ -185,7 +186,7 @@ class Game:
                 self.agent.update(s, a, reward, next_state, done, self.n_planning_updates)
             s = next_state
             c_r += reward
-        
+
         return c_r, actions
 
     def experiment_setup(self, crate_count: int) -> tuple[Agent, float, list[Any], list[pygame.Surface]]:
@@ -200,12 +201,12 @@ class Game:
             self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count)
 
         data = {
-            'Player': [Player, 15, [(self.env.x, self.env.y)], self.loadedImgs['player']],
+            'Player': [Player, 15, [(self.env.x, self.env.y), self.bomb_range], self.loadedImgs['player']],
                 
             'PrioritizedSweepingAgent':[PrioritizedSweepingAgent, 0, 
-            [self.env.n_states, self.env.action_size(), self.alpha, self.gamma, (self.env.x,self.env.y)], self.loadedImgs['agent']],
+            [self.env.n_states, self.env.action_size(), self.alpha, self.gamma, (self.env.x,self.env.y), self.bomb_range], self.loadedImgs['agent']],
                 
-            None:[Random, 0, [(self.env.x,self.env.y)], self.loadedImgs['agent']]
+            'Random':[Random, 0, [(self.env.x,self.env.y), self.bomb_range], self.loadedImgs['agent']]
             }
 
         agent, self.fps, args, imgs = data[self.alg] # unpack data based on algorithm chosen
