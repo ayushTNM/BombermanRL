@@ -62,7 +62,7 @@ class Agent:
 
 class Player(Agent):
     """Human player, selects actions based on key presses that are obtained from pygame"""
-    def __init__(self, pos, b_range = -1, step = 3, bomb_limit = -1, death = True):
+    def __init__(self, pos, b_range, step = 3, bomb_limit = -1, death = True):
         self.type = type(self).__name__
         super().__init__(pos, b_range, step, bomb_limit, death)
             
@@ -78,7 +78,7 @@ class Player(Agent):
 
 class Random(Agent):
     """Agent that chooses random actions, for benchmarking purposes"""
-    def __init__(self, pos: tuple[int, int], b_range: int = -1, step: int = 1,bomb_limit: int = 1, death: bool = False):
+    def __init__(self, pos: tuple[int, int], b_range: int, step: int = 1,bomb_limit: int = 1, death: bool = False):
         self.type = type(self).__name__
         super().__init__(pos, b_range, step, bomb_limit, death)
             
@@ -89,7 +89,7 @@ class Random(Agent):
 class PrioritizedSweepingAgent(Agent):
     """Reinforcement Learning agent, chooses actions based on policy"""
     def __init__(self, n_states: int, n_actions: int, alpha: float, gamma: float,
-                 pos: tuple[int, int], b_range: int = 1, step: int = 1, bomb_limit: int = 1, death: bool=False,
+                 pos: tuple[int, int], b_range: int, step: int = 1, bomb_limit: int = 1, death: bool=False,
                  max_queue_size: int = 200, priority_cutoff: float = 0.01) -> None:
         self.type = type(self).__name__
         self.n_states = n_states

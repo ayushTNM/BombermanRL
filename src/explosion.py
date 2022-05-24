@@ -27,7 +27,7 @@ class Explosion:
         for move in np.array([(0,-1), (0,1), (-1,0), (1,0)]):
             neighbor = self.pos
             steps = 0
-            while map[neighbor] == 0 and (steps < self.range or self.range==-1):
+            while map[neighbor] == 0 and (steps < self.range):
                 steps += 1
                 neighbor = tuple(np.array(move)+np.array(neighbor))
                 if map[neighbor] != 1:

@@ -35,7 +35,8 @@ class Game:
         self.output_name = output
 
         # these can be modified from pygame menu or CLI arguments
-        self.alg = 'PrioritizedSweepingAgent'
+        self.RL = True
+        self.alg = "PrioritizedSweepingAgent"
         self.render = False
         self.render_best = False
 
@@ -64,13 +65,16 @@ class Game:
             scaledImg: pygame.Surface = pygame.transform.scale(loadedImg, (self.tile_size, self.tile_size))
             self.loadedImgs[folder].update({imgName[-1].split('.')[-2]:scaledImg})
 
-    def set_alg(self, _, c: str): self.alg = c                      # called from pygame menu
+    def set_alg(self, _, c: str): 
+        self.alg=c
+        self.RL = True if c in ['PrioritizedSweepingAgent','Random'] \
+                else False                      # called from pygame menu
     def set_render(self, _, c: bool): self.render = c               # called from pygame menu
     def set_render_best(self, _, c: bool): self.render_best = c     # called from pygame menu
 
     def draw(self):
         """Renders a frame on pygame window"""
-        if self.render or self.alg == 'Player' or self.wait_bg:
+        if self.render or not self.RL or self.wait_bg:
             self.display.fill(BACKGROUND)
             self.env.render(self.loadedImgs, self.tile_size, self.display)
 
@@ -109,23 +113,22 @@ class Game:
         self.render = backup_render
 
     def main(self):
-        RL: bool = True if self.alg == 'PrioritizedSweepingAgent' else False    # used to toggle a lot of game behavior
 
-        if RL:
+        if self.RL:
             plot = LearningCurvePlot(title=f'Learning curve', filename=self.output_name)
             start: float = time.perf_counter()              # <-- timer start
             print(f'\nStarting experiment at {datetime.now().strftime("%H:%M:%S")}')        
 
         for crate_count in np.arange(1, self.max_n_crates+1):   # train agent for each number of crates
-            self.wait_bg = 1 - self.render
-            
-            agent, self.fps, args, imgs = self.experiment_setup(crate_count)
-            if RL:
-                rewards = np.zeros(shape=(self.n_repetitions, self.n_episodes))
-                progress = ProgressBar(self.n_repetitions, process_name=f'{crate_count} crates')
 
-            best_actions = []
-            best_c_r = float('-inf')                # best run => least negative cumulative reward
+            agent, self.fps, args, imgs = self.experiment_setup(crate_count)
+            if self.RL:
+                self.wait_bg = 1 - self.render
+                rewards = np.zeros(shape=(self.n_repetitions, self.n_episodes))
+                progress = ProgressBar(self.n_repetitions*self.n_episodes, process_name=f'{crate_count} crates')
+
+                best_actions = []
+                best_c_r = float('-inf')                # best run => least negative cumulative reward
 
             for rep in range(self.n_repetitions):
                 self.agent = agent(*args)           # initialize Agent based on specific arguments
@@ -134,16 +137,17 @@ class Game:
 
                 for ep in range(self.n_episodes):
                     c_r, actions = self.playout()
-                    if RL: rewards[rep,ep] = c_r
+                    if self.RL: 
+                        progress(np.ravel_multi_index ((rep,ep),(self.n_repetitions,self.n_episodes)))
+                        rewards[rep,ep] = c_r
 
-                    if c_r > best_c_r and self.agent.type == 'PrioritizedSweepingAgent':
-                        best_c_r, best_actions = c_r, actions
+                        if c_r > best_c_r:
+                            best_c_r, best_actions = c_r, actions
 
-                    if self.agent.type == 'Player':
+                    else:
                         self.game_over()
                         break
                 else:               # if loop was not broken out of, i.e. agent = RL or random
-                    progress(rep)
                     continue        # move to next episode
                 break               # else, break out of "crate_count" loop and return to menu
             else:                   # if last episode has been reached (agent = RL or random)
@@ -154,7 +158,7 @@ class Game:
                 continue
             break
 
-        if RL:
+        if self.RL:
             end: float = time.perf_counter()                # <-- timer end
             minutes: int = int((end-start) // 60)
             seconds: float = round((end-start) % 60, 1)
@@ -191,14 +195,10 @@ class Game:
 
     def experiment_setup(self, crate_count: int) -> tuple[Agent, float, list[Any], list[pygame.Surface]]:
         """Very ugly function you do not want to interact with"""
-        if self.alg == 'Player':
+        if not self.RL:
             self.env = Environment(*self.grid_size, self.wall_chance, self.crate_chance)
-            while not 2 in self.env.grid:
-                self.env = Environment(*self.grid_size, self.wall_chance, self.crate_chance)
-        elif self.alg == 'PrioritizedSweepingAgent':
-            self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count, seed=42)
         else:
-            self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count)
+            self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count, seed=42)
 
         data = {
             'Player': [Player, 15, [(self.env.x, self.env.y), self.bomb_range], self.loadedImgs['player']],
