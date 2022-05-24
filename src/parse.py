@@ -5,7 +5,7 @@ class ParseWrapper:
 
     valid_long: dict[str, tuple[Union[int, float]]] = {
         'grid_dimensions': (3, 10),
-        'bomb_range': (-1, 9),
+        'bomb_range': (1, 9),
         'max_crate_count': (1, 8),
         'crate_density': (5, 50),
         'wall_density': (0, 50),
