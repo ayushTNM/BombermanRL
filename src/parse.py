@@ -5,16 +5,16 @@ class ParseWrapper:
 
     valid_long: dict[str, tuple[Union[int, float]]] = {
         'grid_dimensions': (3, 10),
-        'bomb_range': (1, 9),
-        'max_crate_count': (1, 5),
+        'bomb_range': (-1, 9),
+        'max_crate_count': (1, 8),
         'crate_density': (5, 50),
         'wall_density': (0, 50),
         'repetitions': (1, 100),
         'episodes': (10, 1000),
-        'alpha': (0.5, 2.0),
+        'alpha': (0.01, 2.0),
         'epsilon': (0.01, 0.25),
         'gamma': (0.9, 1.0),
-        'n_planning_updates': (1, 10)
+        'n_planning_updates': (1, 20)
     }
 
     short_args = ['d', 'b', 'C', 'c', 'w', 'r', 'e', 'A', 'E', 'G', 'N']

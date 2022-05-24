@@ -35,7 +35,7 @@ class Environment(object):
         self.create_grid()
         self.find_start_location()
 
-        mask = (np.arange(self.grid.shape[0])[np.newaxis,:]-self.x)**2 + (np.arange(self.grid.shape[1])[:,np.newaxis]-self.y)**2 >= 2**2
+        mask = (np.arange(self.grid.shape[0])[np.newaxis,:]-self.y)**2 + (np.arange(self.grid.shape[1])[:,np.newaxis]-self.x)**2 >= 2**2
         mask = np.bitwise_and(self.reachable,mask,dtype=int)
         crate_idxs=np.array(list(zip(*np.where(mask == True))))
         if self.crate_chance == -1:

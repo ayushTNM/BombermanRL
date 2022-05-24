@@ -112,7 +112,7 @@ class Game:
         RL: bool = True if self.alg == 'PrioritizedSweepingAgent' else False    # used to toggle a lot of game behavior
 
         if RL:
-            plot = LearningCurvePlot(title=f'Learning curve')
+            plot = LearningCurvePlot(title=f'Learning curve', filename=self.output_name)
             start: float = time.perf_counter()              # <-- timer start
             print(f'\nStarting experiment at {datetime.now().strftime("%H:%M:%S")}')        
 
@@ -160,7 +160,7 @@ class Game:
             seconds: float = round((end-start) % 60, 1)
             stringtime: str = f'{minutes}:{str(seconds).zfill(4)} min' if minutes else f'{seconds} sec'
             print(f'\nExperiment finished in {stringtime}\n')
-            plot.save(name=self.output_name)
+            plot.save()
 
     def playout(self) -> tuple[int, list[int]]:
         """

@@ -55,33 +55,34 @@ class LearningCurvePlot:
     colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red',
               'tab:purple', 'tab:cyan', 'tab:pink', 'tab:olive']
 
-    def __init__(self, title: str = 'placeholder') -> None:
+    def __init__(self, title: str = 'placeholder', filename: str = 'placeholder') -> None:
         self.fig, self.ax = plt.subplots()
         self.ax.set_xlabel('Episode')
         self.ax.set_ylabel('Cumulative reward')
         self.ax.set_title(title)
-        self.plotting_data = dict()
-        
+        self.name = filename
+        if not os.path.exists(data_dir := os.path.join(os.getcwd(),'..','npz', self.name)): os.mkdir(data_dir)
+
     def add_curve(self, data: np.ndarray, color_index: int = 0, label: str = None) -> None:
         """Adds a vector with results to the plot"""
-        self.plotting_data.update({label: data})
         self.ax.plot(data, color=self.colors[color_index], alpha = 0.3)
         smoothing = data.shape[0]//10 + (1+ (data.shape[0]//10) % 2)
         self.ax.plot(savgol_filter(data, smoothing, 1), label=label, color=self.colors[color_index])
         
-    def save(self, name: str = 'placeholder') -> None:
+        timestamp: str = str(datetime.now())[5:19].replace(':', '')
+        np.savez(os.path.join('..','npz',self.name,f'{timestamp}.npz'), array=data)
+        
+    def save(self) -> None:
         """Saves a figure to results directory with given name"""
         self.ax.legend()
-        if os.path.exists(os.path.join('..','results',f'{name}.png')):
+        if os.path.exists(os.path.join('..','results',f'{self.name}.png')):
             yn = '_'
             while yn.lower() not in 'yn':
-                yn = input(f'File "\033[1m{name.split(os.path.sep)[-1]}.png\033[0m" already exists.\nOverwrite? [y/n]: ')
+                yn = input(f'File "\033[1m{self.name.split(os.path.sep)[-1]}.png\033[0m" already exists.\nOverwrite? [y/n]: ')
             if yn.lower() == 'y':
-                self.fig.savefig(os.path.join('..','results',f'{name}.png'), dpi=300)
-                print(f'Figure {name}.png saved successfully')
+                self.fig.savefig(os.path.join('..','results',f'{self.name}.png'), dpi=300)
+                print(f'Figure {self.name}.png saved successfully')
         else:
-            self.fig.savefig(os.path.join('..','results',f'{name}.png'), dpi=300)
-            print(f'Figure {name}.png saved successfully')
-        timestamp: str = str(datetime.now())[5:16].replace(':', '')
-        np.savez(os.path.join('..','npz',f'({len(self.plotting_data)}) {timestamp}.npz'), **self.plotting_data)
+            self.fig.savefig(os.path.join('..','results',f'{self.name}.png'), dpi=300)
+            print(f'Figure {self.name}.png saved successfully')
         exit()

@@ -24,8 +24,13 @@ from game import Game           # script for running the game
 fix_dirs()
 
 def main():
-    main_menu = menu_config()
-    menu_loop(main_menu)
+    # main_menu = menu_config()
+    # menu_loop(main_menu)
+    game = Game(GRID_SIZE, BOMB_RANGE, REPETITIONS, EPISODES,
+                WALL_CHANCE, CRATE_CHANCE, MAX_N_CRATES,
+                ALPHA, GAMMA, EPSILON, N_PLANNING_UPDATES,
+                TILE_SIZE, IMAGES, OUTPUT)
+    game.main()
 
 # ------------- #
 #   CONSTANTS   #
@@ -139,6 +144,7 @@ def menu_config() -> pygame_menu.Menu:
     return main_menu
 
 def menu_loop(main_menu: pygame_menu.Menu) -> None:
+
     clock = pygame.time.Clock()
     
     while True:
