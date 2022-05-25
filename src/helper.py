@@ -1,8 +1,8 @@
 # python standard library
-import os, sys, re                      # directories
-from datetime import datetime, date     # saving raw results
+import os, sys, re                          # directories
+from datetime import datetime, date, time   # saving raw results
 # dependencies
-import numpy as np                              # arrays, math
+import numpy as np                          # arrays, math
 
 def fix_dirs() -> None:
     """Changes cwd to src, and creates a results dir on the same level if not already present"""
@@ -49,15 +49,13 @@ class ProgressBar:
 
 class DataManager:
     def __init__(self, dirname: str = '') -> None:
-        self.tic = datetime.now().time()
         if not dirname:
-            self.dirname = str(self.tic).split('.')[0].replace(':', '')
+            self.dirname = str(datetime.now()).split('.')[0].replace(':', '')
         else: self.dirname = dirname
         if not os.path.exists(data_dir := os.path.join(os.getcwd(),'..','npz', self.dirname)): os.mkdir(data_dir)
     
-    def save_array(self, data: np.ndarray, id: int) -> None:
+    def save_array(self, data: np.ndarray, id: int, tic: time) -> None:
         toc = datetime.now().time()
-        dt = datetime.combine(date.today(), toc) - datetime.combine(date.today(), self.tic)
+        dt = datetime.combine(date.today(), toc) - datetime.combine(date.today(), tic)
         strtime = str(id) + '_0' + str(dt).split('.')[0].replace(':', '')
         np.savez(os.path.join('..','npz',self.dirname,f'{strtime}.npz'), array=data)
-        self.tic = toc

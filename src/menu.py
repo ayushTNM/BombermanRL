@@ -45,7 +45,7 @@ DIMENSIONS, BOMB_RANGE, MAX_N_CRATES = args[0], args[1], args[2]
 CRATE_CHANCE, WALL_CHANCE = args[3],args[4]
 REPETITIONS, EPISODES = args[5], args[6]
 HYPERPARAMS = {"alpha":args[7],"gamma":args[8],"epsilon":args[9],"n_planning_updates":args[10]}
-OUTPUT = args[11]
+OUTPUT = args[11] + str(args[0])
 
 WIDTH = HEIGHT = DIMENSIONS                              # world dimensions (excluding border walls)
 GRID_SIZE = np.array([WIDTH+2, HEIGHT+2], dtype=int)     # np.ndarray for math operations

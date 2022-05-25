@@ -1,5 +1,6 @@
 import os
 import datetime
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter       # smoothing plots
@@ -7,21 +8,25 @@ from scipy.signal import savgol_filter       # smoothing plots
 def main():
     """Usage
     ---
-    * output = name of folder in npz directory that contains your data
-    * title = title you want the plot to have
-    ---
-    the plot will be saved as "<output>_lc", where output is the same as specified above
+    output = name of folder in npz directory that contains your data
+    
+    the plot will be saved as "<output>_lc", where output is the same as specified above    
+    
+    make sure you're working from src, otherwise the npz dir will not be found
     """
     output = 'plot5'
-    title = 'Learning Curve 5x5'
-    plot_results(output, title)
+    plot_results(output)
 
 
-def plot_results(output: str, title: str = 'placeholder') -> None:
+def plot_results(output: str) -> None:
+    part_one = 'Learning Curves'
+    if (num := re.findall(r'\d+', output)):
+        part_two = f' ({num[0]}x{num[0]})'
+    else:
+        part_two = ''
+    plot = LearningCurvePlot(title = part_one+part_two)
+
     cwd = os.getcwd()
-
-    plot = LearningCurvePlot(title=title)
-
     filenames = sorted(os.listdir(os.path.join(cwd,'..','npz',output)))
     # filter out unusable files such as "icon?", ".DS_Store", ...
     npz_filenames = []
