@@ -8,41 +8,35 @@ import pygame                   # rendering, human interaction
 # local imports
 from environment import Environment                             # obtaining rewards for agent
 from agent import Agent                                         # type hinting
-from agent import Player, PrioritizedSweepingAgent, Random      # implementations
 from helper import DataManager, ProgressBar                     # storing arrays, progress visualization
 from plot import plot_results                                   # final results plotting
 
 BACKGROUND = (107, 142, 35)     # moss green
 
 class Game:
-    def __init__(self, grid_size: np.ndarray, bomb_range: int, n_repetitions: int, n_episodes: int,
-                 wall_chance: int, crate_chance: int, max_n_crates: int, 
-                 alpha: float, gamma: float, epsilon: float, n_planning_updates: int,
-                 tile_size: int, images: list[str], output: str = 'plot'):
+    def __init__(self, grid_size: np.ndarray, bomb_range: int, crate_chance: int,wall_chance: int,
+                n_repetitions: int, n_episodes: int, max_n_crates: int, hyperparams,
+                tile_size: int, images: list[str], output: str = 'plot'):
 
         self.grid_size = grid_size
-        self.bomb_range = bomb_range
-        self.wall_chance = wall_chance / 100
-        self.crate_chance = crate_chance / 100
         self.tile_size = tile_size
         self.load_images(images)
+        self.wall_chance = wall_chance/100
+        self.crate_chance = crate_chance/100
         self.n_repetitions = n_repetitions
         self.n_episodes = n_episodes
         self.max_n_crates = max_n_crates
-        self.alpha = alpha
-        self.gamma = gamma
-        self.epsilon = epsilon
-        self.n_planning_updates = n_planning_updates
+        self.params = {"bomb_range":bomb_range,"step":1,"death":0}
+        self.hyperparams = hyperparams
         self.output_name = output
 
         # these can be modified from pygame menu or CLI arguments
         self.RL = True
-        self.alg = "PrioritizedSweepingAgent"
         self.render = False
         self.render_best = False
+        self.wait_bg = False
 
         self.agent = None
-        self.wait_bg = False
 
         pygame.font.init()
         self.font = pygame.font.SysFont('Bebas', 100)
@@ -68,10 +62,10 @@ class Game:
 
     def set_alg(self, _, c: str): 
         self.alg=c
-        self.RL = True if c in ['PrioritizedSweepingAgent','Random'] \
-                else False                      # called from pygame menu
-    def set_render(self, _, c: bool): self.render = c               # called from pygame menu
-    def set_render_best(self, _, c: bool): self.render_best = c     # called from pygame menu
+        self.RL = True if c.__name__ == 'PrioritizedSweepingAgent' else False   # called from pygame menu
+    def set_render(self, _, c: bool): self.render = c                           # called from pygame menu
+    def set_render_best(self, _, c: bool): self.render_best = c                 # called from pygame menu
+    def set_bomb_limit(self, _, c: bool): self.params.update({"bomb_limit":c})  # called from pygame menu
 
     def draw(self):
         """Renders a frame on pygame window"""
@@ -94,56 +88,48 @@ class Game:
 
             pygame.display.update()
 
-    def replay_best(self, actions: list[int], r: int) -> None:
+    def replay_best(self, actions: list[int]) -> None:
         """
         After an agent has trained for a number of episodes,
         this function can be used to render the best sequence of actions it has found
         """
-        backup_render = self.render
+        temp_render,temp_fps = self.render, self.env.fps
+
+        self.env.fps = 15
         self.render = True
         self.env.reset(self.agent)
         self.draw()
         time.sleep(1)
-        while len(actions)>0:
-            self.clock.tick(15)
-            dt = self.clock.get_fps()
-            self.env.step(actions[0], self.agent, dt, self.draw)
-            actions.pop(0)
+        for action in actions:
+            self.env.step(action, self.agent, self.draw)
             self.draw()
         self.game_over()
-        self.render = backup_render
+
+        self.env.fps,self.render = temp_fps,temp_render
 
     def main(self):
 
         if self.RL:
             vault = DataManager(dirname=self.output_name)
             start: float = time.perf_counter()              # <-- timer start
-            print(f'\nStarting experiment at {datetime.now().strftime("%H:%M:%S")}')        
+            print(f'\nStarting experiment at {datetime.now().strftime("%H:%M:%S")}')   
 
         for crate_count in np.arange(1, self.max_n_crates+1):   # train agent for each number of crates
 
-            agent, self.fps, args, imgs = self.experiment_setup(crate_count)
-            if self.RL:
-                self.wait_bg = 1 - self.render
-                rewards = np.zeros(shape=(self.n_repetitions, self.n_episodes))
-                progress = ProgressBar(self.n_repetitions*self.n_episodes, process_name=f'{crate_count} crates')
-
-                best_actions = []
-                best_c_r = float('-inf')                # best run => least negative cumulative reward
+            data = self.experiment_setup(crate_count)
 
             for rep in range(self.n_repetitions):
-                self.agent = agent(*args)           # initialize Agent based on specific arguments
-                self.agent.load_animations(imgs)
+                self.agent = self.alg((self.env.x, self.env.y), self.loadedImgs,**self.params)           # initialize Agent based on specific arguments
                 
-
                 for ep in range(self.n_episodes):
                     c_r, actions = self.playout()
+                    
                     if self.RL: 
-                        progress(np.ravel_multi_index ((rep,ep),(self.n_repetitions,self.n_episodes)))
-                        rewards[rep,ep] = c_r
+                        data["progress"](np.ravel_multi_index ((rep,ep),(self.n_repetitions,self.n_episodes)))
+                        data["rewards"][rep,ep] = c_r
 
-                        if c_r > best_c_r:
-                            best_c_r, best_actions = c_r, actions
+                        if c_r > data["best_c_r"]:
+                            data["best_c_r"], data["best_actions"] = c_r, actions
 
                     else:
                         self.game_over()
@@ -152,9 +138,9 @@ class Game:
                     continue        # move to next repetition
                 break               # else, break out of "crate_count" loop and return to menu
             else:                   # if last episode has been reached (agent = RL or random)
-                vault.save_array(data=rewards, id=crate_count)
-                if actions != None and self.render_best == True:
-                    self.replay_best(best_actions, best_c_r)
+                vault.save_array(data=data["rewards"], id=crate_count)
+                if actions != None and self.render_best:
+                    self.replay_best(data["best_actions"])
                 continue
             break
 
@@ -176,50 +162,47 @@ class Game:
         done: bool = False
         actions: list[int] = []
         c_r: int = 0
-        self.agent, s = self.env.reset(self.agent)
+        s=None
+        if self.RL: self.agent, s = self.env.reset(self.agent)
         self.draw()
         while self.agent.alive and 2 in self.env.grid:
-            self.clock.tick(self.fps)
-            dt = self.clock.get_fps()
-
-            a = self.agent.select_action(s, self.epsilon)
-            actions.append(a)
-            reward, next_state = self.env.step(a, self.agent, dt, self.draw)
             
-            if self.agent.type == 'PrioritizedSweepingAgent':
-                done = len(np.unique(self.env.grid, return_counts=True)[1]) == 2
-                self.agent.update(s, a, reward, next_state, done, self.n_planning_updates)
-            s = next_state
-            c_r += reward
+            a = self.agent.select_action(s)
+            actions.append(a)
+            reward, next_state = self.env.step(a, self.agent, self.draw)
+
+            if self.RL:
+                done = not np.sum(self.env.grid == 2)
+                self.agent.update(s, a, reward, next_state, done)
+                s = next_state
+                c_r += reward
 
         return c_r, actions
 
     def experiment_setup(self, crate_count: int) -> tuple[Agent, float, list[Any], list[pygame.Surface]]:
         """Very ugly function you do not want to interact with"""
+        fps=0
+        data = None
         if not self.RL:
-            self.env = Environment(*self.grid_size, self.wall_chance, self.crate_chance)
+            if self.alg.__name__ != "Random":
+                fps=15
+                self.params.update({"step":3,"death":1})
+            self.env = Environment(*self.grid_size, self.wall_chance, self.crate_chance, fps=fps)
         else:
+            data = {"rewards" : np.zeros(shape=(self.n_repetitions, self.n_episodes)),
+                    "progress" : ProgressBar(self.n_repetitions*self.n_episodes, process_name=f'{crate_count} crates'),
+                    "best_actions" : [],
+                    "best_c_r" : float('-inf')}                # best run => least negative cumulative reward}
+            self.wait_bg = not self.render
             self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count, seed=42)
+            self.params.update(self.hyperparams | {"n_states":self.env.n_states,"n_actions":self.env.n_actions})
 
-        data = {
-            'Player': [Player, 15, [(self.env.x, self.env.y), self.bomb_range], self.loadedImgs['player']],
-                
-            'PrioritizedSweepingAgent':[PrioritizedSweepingAgent, 0, 
-            [self.env.n_states, self.env.action_size(), self.alpha, self.gamma, (self.env.x,self.env.y), self.bomb_range], self.loadedImgs['bomberman']],
-                
-            'Random':[Random, 0, [(self.env.x,self.env.y), self.bomb_range], self.loadedImgs['agent']]
-            }
-
-        agent, self.fps, args, imgs = data[self.alg] # unpack data based on algorithm chosen
-        return (agent, self.fps, args, imgs)
+        return data
 
     def game_over(self):
-        self.clock.tick(self.fps)
-        dt = self.clock.get_fps()
-        self.env.update_bombs(dt)
-        _, counts = np.unique(self.env.grid, return_counts=True)
+        self.env.update_bombs(self.draw)
         self.draw()
-        if len(counts) == 2:
+        if not np.sum(self.env.grid==2):
             font_w = self.winSurface.get_width()
             font_h = self.winSurface.get_height()
             self.display.blit(self.winSurface, (self.display.get_width() // 2 - font_w//2,  self.display.get_height() // 2 - font_h//2))

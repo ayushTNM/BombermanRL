@@ -9,6 +9,7 @@ import pygame                       # rendering, human interaction
 from bomb import Bomb               # placing bombs
 from explosion import Explosion     # only for type hinting
 
+
 class Agent:
     """Parent class for all agents"""
     alive: bool = True
@@ -17,17 +18,21 @@ class Agent:
     frame: int = 0
     animation: list[list[pygame.Surface]] = []
 
-    def __init__(self, pos: tuple[int, int], b_range: int, step: int, bomb_limit: int, death: bool):
+    def __init__(self, pos: tuple[int, int], imgs, bomb_range: int, step: int, bomb_limit: int, death: bool):
         self.bomb_limit = bomb_limit
         self.step = step
         self.x, self.y = np.array(pos) * self.step
-        self.range = b_range
+        self.range =bomb_range
         self.death = death
+        self.load_animations(imgs[self.type])
     
     def move(self, dx: int, dy: int, grid: np.ndarray):
         """Moves the agent as specified by the movement parameters"""
         temp_x: int = self.x//self.step if (dx != -1) else math.ceil(self.x/self.step)
         temp_y: int = self.y//self.step if (dy != 1) else math.ceil(self.y/self.step)
+
+        if self.frame == 2: self.frame = 0
+        else: self.frame += 1
 
         if dx == 0:
             self.x = round((self.x/self.step)) * self.step
@@ -39,8 +44,6 @@ class Agent:
             if grid[temp_x+dx][int(self.y/self.step)] != 0: return
             if grid[temp_x+dx][temp_y] == 0: self.x += dx
         
-        if self.frame == 2: self.frame = 0
-        else: self.frame += 1
 
     def plant_bomb(self, map: np.ndarray, time: int) -> Bomb:
         """Returns a newly instantiated Bomb object"""
@@ -59,14 +62,13 @@ class Agent:
     def load_animations(self, imgs: set[pygame.Surface]):
         self.animation: list[list[pygame.Surface]]= [[imgs[j] for j in list(i)] for _, i in groupby(imgs, lambda a: a[1])]
 
-
 class Player(Agent):
     """Human player, selects actions based on key presses that are obtained from pygame"""
-    def __init__(self, pos, b_range, step = 3, bomb_limit = -1, death = True):
+    def __init__(self,pos, imgs,bomb_range, step, bomb_limit, death):
         self.type = type(self).__name__
-        super().__init__(pos, b_range, step, bomb_limit, death)
+        super().__init__(pos, imgs,bomb_range, step, bomb_limit, death)
             
-    def select_action(self, s: int, eps: float) -> int:
+    def select_action(self, s: int = None) -> int:
         keys = pygame.key.get_pressed()
         moves = [pygame.K_UP, pygame.K_RIGHT, pygame.K_DOWN, pygame.K_LEFT]
         action = 4
@@ -78,22 +80,23 @@ class Player(Agent):
 
 class Random(Agent):
     """Agent that chooses random actions, for benchmarking purposes"""
-    def __init__(self, pos: tuple[int, int], b_range: int, step: int = 1,bomb_limit: int = 1, death: bool = False):
+    def __init__(self,pos, imgs,bomb_range, step, bomb_limit, death):
         self.type = type(self).__name__
-        super().__init__(pos, b_range, step, bomb_limit, death)
+        super().__init__(pos, imgs,bomb_range, step, bomb_limit, death)
             
-    def select_action(self, s: int, eps: float) -> int:
-        return np.random.randint(0, 6)
+    def select_action(self, s: int = None) -> int:
+        return np.random.randint(0, (6- (not self.bomb_limit)))
 
 
 class PrioritizedSweepingAgent(Agent):
     """Reinforcement Learning agent, chooses actions based on policy"""
-    def __init__(self, n_states: int, n_actions: int, alpha: float, gamma: float,
-                 pos: tuple[int, int], b_range: int, step: int = 1, bomb_limit: int = 1, death: bool=False,
-                 max_queue_size: int = 200, priority_cutoff: float = 0.01) -> None:
+    def __init__(self, pos, imgs,bomb_range, step, bomb_limit, death,n_states: int, n_actions: int, alpha: float, gamma: float,
+                n_planning_updates: int, epsilon: float, max_queue_size: int = 200, priority_cutoff: float = 0.01) -> None:
         self.type = type(self).__name__
         self.n_states = n_states
         self.n_actions = n_actions
+        self.n_planning_updates = n_planning_updates
+        self.epsilon = epsilon
         self.alpha = alpha
         self.gamma = gamma
         self.queue = PriorityQueue(maxsize=max_queue_size)
@@ -101,14 +104,13 @@ class PrioritizedSweepingAgent(Agent):
         self.Q = np.zeros((n_states, n_actions))
         self.N = np.zeros((n_states, n_actions, n_states))
         self.model = np.zeros((n_states, n_actions, 2), dtype = int)
-        super().__init__(pos, b_range, step, bomb_limit, death)
+        super().__init__(pos, imgs,bomb_range, step, bomb_limit, death)
     
-    def select_action(self, s: int, eps: float) -> int:
+    def select_action(self, s: int) -> int:
         """Epsilon-greedy action selection"""
-        actions = self.n_actions - 1 if (self.bomb_limit == 0) else self.n_actions
-        return np.random.choice(np.where(self.Q[s] == max(self.Q[s]))[0]) if np.random.rand() > eps else np.random.choice(actions)
+        return np.random.choice(np.where(self.Q[s] == max(self.Q[s]))[0]) if np.random.rand() > self.epsilon else np.random.choice(self.n_actions- (not self.bomb_limit))
         
-    def update(self, s: int, a: int, r: int, sp: int, done: bool, n_planning_updates: int) -> None:
+    def update(self, s: int, a: int, r: int, sp: int, done: bool) -> None:
         """Main update function of Prioritized Sweeping agent"""
         self.N[s,a,sp] += 1             # update transition count
         self.model[s,a] = r, sp         # update model
@@ -122,7 +124,7 @@ class PrioritizedSweepingAgent(Agent):
         if done:    # if agent has reached goal, model updating is still required
             return  # but planning is not
 
-        for _ in range(n_planning_updates):
+        for _ in range(self.n_planning_updates):
             if self.queue.empty():
                 break
             self._planning(s, a)
@@ -147,3 +149,8 @@ class PrioritizedSweepingAgent(Agent):
     def _calc_p(self, s: int, a: int, r: int, sp: int) -> float:
         """Calculate the priority of a given transition"""
         return abs(r + self.gamma * max(self.Q[sp]) - self.Q[s,a])
+
+
+
+
+# a = Agent("Random",(1,1),1,1,1,1,None)

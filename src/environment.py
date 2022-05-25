@@ -10,18 +10,18 @@ from agent import Agent                 # type hinting
 class Environment(object):
     
     def __init__(self, width: int, height: int, wall_chance: float, crate_chance: float = -1,
-                 crate_count: int = -1, seed: int = None):
+                fps: int = 0,crate_count: int = -1, seed: int = None):
         
         self.width = width
         self.height = height
         self.wall_chance = wall_chance
         self.crate_chance = crate_chance
+        self.clock = pygame.time.Clock()
+        self.fps = fps
         self.shape = np.array([self.width, self.height])
         self.crate_count = crate_count
-        if seed is not None:
-            self.rng = np.random.default_rng(seed)
-        else:
-            self.rng = np.random.default_rng()
+        self.bombs, self.explosions = [], []
+        self.rng = np.random.default_rng(seed)
         self.generate()
         pass
 
@@ -40,13 +40,16 @@ class Environment(object):
         crate_idxs=np.array(list(zip(*np.where(mask == True))))
         if self.crate_chance == -1:
             self.crate_locs = crate_idxs[self.rng.choice(len(crate_idxs),self.crate_count,replace=False)]
+            self.crate_chance = self.crate_count/np.sum(self.free_idxs)
         else:
-            self.crate_locs = crate_idxs[self.rng.random(len(crate_idxs))< self.wall_chance]
+            self.crate_locs = crate_idxs[self.rng.random(len(crate_idxs))< self.crate_chance]
+            self.crate_count = len(self.crate_locs)
         self.grid[tuple([*self.crate_locs.T])] = 2
 
         self.backup_pos = (self.x,self.y)
         self.backup_grid = self.grid.copy()
         self.n_states = self.height * self.width * (2**self.crate_count)
+        self.n_actions = len(self.possible_actions())
 
     def create_grid(self) -> None:
         """Creates a grid"""
@@ -70,12 +73,13 @@ class Environment(object):
             self.find_reachable_spaces((x, y))
         self.x, self.y = x, y
 
-    def step(self, action, agent, dt: int, draw: Callable) -> tuple[int, Optional[int]]:
+    def step(self, action, agent, draw: Callable) -> tuple[int, Optional[int]]:
         r = -1
         r -= (action==5)
+        self.clock.tick(self.fps)
+        self.dt = self.clock.get_fps()
         movement_actions = [(0,1), (1,0), (0,-1), (-1,0)]
         direction = agent.direction
-        movement = False
 
         for e in pygame.event.get():
             if e.type == pygame.QUIT: 
@@ -83,25 +87,22 @@ class Environment(object):
             elif e.type == pygame.KEYDOWN:
                 if e.key == pygame.K_ESCAPE:
                     sys.exit(0)
-                if e.key == pygame.K_SPACE and agent.type == "Player" and agent.alive:
+                if e.key == pygame.K_SPACE and agent.type == "Player" and agent.bomb_limit != 0:
                     action = 5
 
         if action < 4:
             direction = action
-            movement = True
             if direction != agent.direction: agent.frame=0; agent.direction = direction
             agent.move(*movement_actions[action], self.grid)
         elif action > 4:
-            if agent.bomb_limit == 0:
-                return r, self.to_state(agent.get_coords())
             if not agent.get_coords() in [b.pos for b in self.bombs]:
-                temp_bomb = agent.plant_bomb(self.grid, dt)
+                temp_bomb = agent.plant_bomb(self.grid, self.dt)
                 self.bombs.append(temp_bomb)
-                self.grid[temp_bomb.pos] = 0
-        if not movement:
+                self.grid[temp_bomb.pos] = 0        
+        else:
             agent.frame = 0
         draw()
-        r += 2 * self.update_bombs(dt)
+        r += 2 * self.update_bombs(draw)
         if agent.type == "PrioritizedSweepingAgent":
             self.exploded_crates[self.grid[tuple([*self.crate_locs.T])] != 2] =1
             return r, self.to_state(agent.get_coords())
@@ -114,7 +115,6 @@ class Environment(object):
         ---
         Returns the same agent object as was passed, but again at starting position
         """
-        self.bombs, self.explosions = [], []
         self.grid = self.backup_grid.copy()
         self.bombs, self.explosions = [], []
         self.exploded_crates = np.zeros((self.crate_count),dtype=int)
@@ -154,30 +154,19 @@ class Environment(object):
             for s in x.sectors:
                 display.blit(imgs["explosion"][str(x.frame+1)], (s[0] * tile_size, s[1] * tile_size, tile_size, tile_size))
     
-    def update_bombs(self, dt: int) -> int:
+    def update_bombs(self,draw) -> int:
         expl_c = 0              # number of exploded crates
         for b in self.bombs:
-            b.update(dt)
+            b.update(self.dt)
             expl_c += b.detonate(self.bombs)
             if b.explosion != None:
                 self.explosions.append(b.explosion)
+        draw()
         for x in self.explosions:
-            x.update(dt)
+            x.update(self.dt)
             if x.time < 1:
                 self.explosions.remove(x)
         return expl_c
         
     def possible_actions(self):
         return([0, 1, 2, 3, 4, 5])
-    
-    def state(self):
-        pass
-    
-    def state_size(self):
-        pass
-    
-    def action_size(self):
-        return(len(self.possible_actions()))
-    
-    def done(self):
-        pass

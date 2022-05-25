@@ -8,7 +8,7 @@ class ParseWrapper:
         'bomb_range': (1, 9),
         'max_crate_count': (1, 8),
         'crate_density': (5, 50),
-        'wall_density': (0, 50),
+        'wall_density': (1, 50),
         'repetitions': (1, 100),
         'episodes': (10, 1000),
         'alpha': (0.01, 2.0),
@@ -44,13 +44,13 @@ class ParseWrapper:
         parser.add_argument('-e', '--episodes', type=int, default=100,
                             help=("number of episodes one repetition should consist of " +
                             f"[{self.valid['e'][0]}-{self.valid['e'][1]}]"))
-        parser.add_argument('-A', '--alpha', type=float, default=1.0,
+        parser.add_argument('-A', '--alpha', type=float, default=0.05,
                             help=("learning rate " +
                             f"[{self.valid['A'][0]}-{self.valid['A'][1]}]"))
         parser.add_argument('-G', '--gamma', type=float, default=0.99,
                             help=("discount rate " +
                             f"[{self.valid['G'][0]}-{self.valid['G'][1]}]"))
-        parser.add_argument('-E', '--epsilon', type=float, default=0.05,
+        parser.add_argument('-E', '--epsilon', type=float, default=0.01,
                             help=("learning rate " +
                             f"[{self.valid['E'][0]}-{self.valid['E'][1]}]"))
         parser.add_argument('-N', '--n_planning_updates', type=int, default=10,

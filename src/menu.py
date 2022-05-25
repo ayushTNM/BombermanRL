@@ -21,16 +21,18 @@ from parse import ParseWrapper  # outsourcing argument parsing
 from helper import fix_dirs     # making directory system foolproof
 from game import Game           # script for running the game
 
+from agent import Player, PrioritizedSweepingAgent, Random      # implementations
+
 fix_dirs()
 
 def main():
-    # main_menu = menu_config()
-    # menu_loop(main_menu)
-    game = Game(GRID_SIZE, BOMB_RANGE, REPETITIONS, EPISODES,
-                WALL_CHANCE, CRATE_CHANCE, MAX_N_CRATES,
-                ALPHA, GAMMA, EPSILON, N_PLANNING_UPDATES,
-                TILE_SIZE, IMAGES, OUTPUT)
-    game.main()
+    main_menu = menu_config()
+    menu_loop(main_menu)
+    # game = Game(GRID_SIZE, BOMB_RANGE, REPETITIONS, EPISODES,
+    #             WALL_CHANCE, CRATE_CHANCE, MAX_N_CRATES,
+    #             ALPHA, GAMMA, EPSILON, N_PLANNING_UPDATES,
+    #             TILE_SIZE, IMAGES, OUTPUT)
+    # game.main()
 
 # ------------- #
 #   CONSTANTS   #
@@ -40,9 +42,9 @@ def main():
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 args = ParseWrapper(parser)()
 DIMENSIONS, BOMB_RANGE, MAX_N_CRATES = args[0], args[1], args[2]
-CRATE_CHANCE, WALL_CHANCE = args[3], args[4]
+CRATE_CHANCE, WALL_CHANCE = args[3],args[4]
 REPETITIONS, EPISODES = args[5], args[6]
-ALPHA, GAMMA, EPSILON, N_PLANNING_UPDATES = args[7], args[8], args[9], args[10]
+HYPERPARAMS = {"alpha":args[7],"gamma":args[8],"epsilon":args[9],"n_planning_updates":args[10]}
 OUTPUT = args[11]
 
 WIDTH = HEIGHT = DIMENSIONS                              # world dimensions (excluding border walls)
@@ -78,10 +80,8 @@ def menu_config() -> pygame_menu.Menu:
     pygame.display.set_caption('Bomberman')     # window bar caption
 
     # create the Game instance
-    game = Game(GRID_SIZE, BOMB_RANGE, REPETITIONS, EPISODES,
-                WALL_CHANCE, CRATE_CHANCE, MAX_N_CRATES,
-                ALPHA, GAMMA, EPSILON, N_PLANNING_UPDATES,
-                TILE_SIZE, IMAGES, OUTPUT)
+    game = Game(GRID_SIZE, BOMB_RANGE, CRATE_CHANCE, WALL_CHANCE, REPETITIONS, EPISODES, MAX_N_CRATES,
+                HYPERPARAMS, TILE_SIZE, IMAGES, OUTPUT)
 
     # menu GUI settings, inherited by play_menu, play_options and main_menu
     menu_theme = pygame_menu.themes.Theme(
@@ -109,20 +109,32 @@ def menu_config() -> pygame_menu.Menu:
         width = int(WINDOW_SIZE[0] * menu_percentage),
         title = 'Options'
     )
+    character = [('Prioritized Sweeping Agent', PrioritizedSweepingAgent),
+             ('Player', Player),
+             ('Random', Random)]
+    render = [('No', False),
+            ('Yes', True)]
+    render_best = [('Yes', True),
+                    ('No', False)]
+    bomb_limit = [(str(i),i) for i in range(1,np.sum(GRID_SIZE-2)+1)]
+
+    game.set_alg(None,character[0][1])
+    game.set_render(None,render[0][1])
+    game.set_render_best(None,render_best[0][1])
+    game.set_bomb_limit(None,bomb_limit[0][1])
 
     play_options.add.selector('Character',
-            [('Prioritized Sweeping Agent', 'PrioritizedSweepingAgent'),
-             ('Player', 'Player'),
-             ('Random', 'Random')],
+            character,
             onchange = game.set_alg)
     play_options.add.selector('Render (Agent Only)',
-            [('No', False),
-             ('Yes', True)],
+            render,
             onchange = game.set_render)
     play_options.add.selector('Render Best (Agent Only)',
-            [('No', False),
-             ('Yes', True)],
+            render_best,
             onchange = game.set_render_best)
+    play_options.add.selector('Bomb_limit (Player/Random)',
+            bomb_limit,
+            onchange = game.set_bomb_limit)
     play_options.add.button('Back',
             pygame_menu.events.BACK)
 
