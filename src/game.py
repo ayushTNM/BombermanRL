@@ -9,7 +9,8 @@ import pygame                   # rendering, human interaction
 from environment import Environment                             # obtaining rewards for agent
 from agent import Agent                                         # type hinting
 from agent import Player, PrioritizedSweepingAgent, Random      # implementations
-from helper import LearningCurvePlot, ProgressBar               # results plotting, progress visualization
+from helper import DataManager, ProgressBar                     # storing arrays, progress visualization
+from plot import plot_results                                   # final results plotting
 
 BACKGROUND = (107, 142, 35)     # moss green
 
@@ -115,7 +116,7 @@ class Game:
     def main(self):
 
         if self.RL:
-            plot = LearningCurvePlot(title=f'Learning curve', filename=self.output_name)
+            vault = DataManager(dirname=self.output_name)
             start: float = time.perf_counter()              # <-- timer start
             print(f'\nStarting experiment at {datetime.now().strftime("%H:%M:%S")}')        
 
@@ -148,11 +149,10 @@ class Game:
                         self.game_over()
                         break
                 else:               # if loop was not broken out of, i.e. agent = RL or random
-                    continue        # move to next episode
+                    continue        # move to next repetition
                 break               # else, break out of "crate_count" loop and return to menu
             else:                   # if last episode has been reached (agent = RL or random)
-                avg_r_per_episode: np.array = np.average(rewards, axis=0)
-                plot.add_curve(data=avg_r_per_episode, color_index=crate_count-1, label=f'{crate_count} crates')
+                vault.save_array(data=rewards, id=crate_count)
                 if actions != None and self.render_best == True:
                     self.replay_best(best_actions, best_c_r)
                 continue
@@ -164,7 +164,8 @@ class Game:
             seconds: float = round((end-start) % 60, 1)
             stringtime: str = f'{minutes}:{str(seconds).zfill(4)} min' if minutes else f'{seconds} sec'
             print(f'\nExperiment finished in {stringtime}\n')
-            plot.save()
+            if self.output_name:
+                plot_results(self.output_name, title=f'Learning Curves {self.grid_size[0]-2}x{self.grid_size[1]-2}')
 
     def playout(self) -> tuple[int, list[int]]:
         """

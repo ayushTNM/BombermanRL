@@ -3,8 +3,6 @@ import os, sys, re                      # directories
 from datetime import datetime, date     # saving raw results
 # dependencies
 import numpy as np                              # arrays, math
-import matplotlib.pyplot as plt                 # plotting
-from scipy.signal import savgol_filter          # smoothing plots
 
 def fix_dirs() -> None:
     """Changes cwd to src, and creates a results dir on the same level if not already present"""
@@ -37,7 +35,7 @@ class ProgressBar:
     def __call__(self, iteration: int) -> None:
         """Updates and displays a progress bar on the command line"""
         percentage = 100 * (iteration+1) // self.n_iters    # floored percentage
-        if percentage != 0 and percentage == 100 * iteration // self.n_iters: return
+        if percentage == 100 * iteration // self.n_iters: return    # prevent printing same line multiple times
         steps = 50 * (iteration+1) // self.n_iters          # chars representing progress
         self.spin_frame += 1
 
@@ -46,47 +44,20 @@ class ProgressBar:
         
         if iteration+1 == self.n_iters: suffix = ' complete\n'
         else: suffix = ' ' + spin_char + ' ' + str(percentage) + '% '	# spinner and percentage
-        
         print('\r' + bar + suffix, end='')
         return
 
-class LearningCurvePlot:
-    # color cycle
-    colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red',
-              'tab:purple', 'tab:cyan', 'tab:pink', 'tab:olive']
-
-    def __init__(self, title: str = 'placeholder', filename: str = 'placeholder', save_data: bool = True) -> None:
-        self.fig, self.ax = plt.subplots()
-        self.ax.set_xlabel('Episode')
-        self.ax.set_ylabel('Cumulative reward')
-        self.ax.set_title(title)
-        self.name = filename
-        self.save_data = save_data
-        if save_data:
-            if not os.path.exists(data_dir := os.path.join(os.getcwd(),'..','npz', self.name)): os.mkdir(data_dir)        
-            self.tic = datetime.now().time()
-
-
-    def add_curve(self, data: np.ndarray, color_index: int = 0, label: str = None) -> None:
-        """Adds a vector with results to the plot"""
-        self.ax.plot(data, color=self.colors[color_index], alpha = 0.3)
-        smoothing = data.shape[0]//10 + (1+ (data.shape[0]//10) % 2)
-        self.ax.plot(savgol_filter(data, smoothing, 1), label=label, color=self.colors[color_index])
-        if self.save_data:
-            toc = datetime.now().time()
-            dt = datetime.combine(date.today(), toc) - datetime.combine(date.today(), self.tic)
-            strtime = str(color_index+1) + '_0' + str(dt).split('.')[0].replace(':', '')
-            np.savez(os.path.join('..','npz',self.name,f'{strtime}.npz'), array=data)
-            self.tic = toc
-        
-    def save(self) -> None:
-        """Saves a figure to results directory with given name"""
-        self.ax.legend()
-        if os.path.exists(os.path.join('..','results',f'{self.name}.png')):
-            yn = '_'
-            while yn.lower() not in 'yn':
-                yn = input(f'File "\033[1m{self.name.split(os.path.sep)[-1]}.png\033[0m" already exists.\nOverwrite? [y/n]: ')
-            if yn.lower() == 'n':
-                return
-        self.fig.savefig(os.path.join('..','results',f'{self.name}.png'), dpi=300)
-        print(f'Figure {self.name}.png saved successfully')
+class DataManager:
+    def __init__(self, dirname: str = '') -> None:
+        self.tic = datetime.now().time()
+        if not dirname:
+            self.dirname = str(self.tic).split('.')[0].replace(':', '')
+        else: self.dirname = dirname
+        if not os.path.exists(data_dir := os.path.join(os.getcwd(),'..','npz', self.dirname)): os.mkdir(data_dir)
+    
+    def save_array(self, data: np.ndarray, id: int) -> None:
+        toc = datetime.now().time()
+        dt = datetime.combine(date.today(), toc) - datetime.combine(date.today(), self.tic)
+        strtime = str(id) + '_0' + str(dt).split('.')[0].replace(':', '')
+        np.savez(os.path.join('..','npz',self.dirname,f'{strtime}.npz'), array=data)
+        self.tic = toc

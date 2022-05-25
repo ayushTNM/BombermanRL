@@ -56,7 +56,7 @@ class ParseWrapper:
         parser.add_argument('-N', '--n_planning_updates', type=int, default=10,
                             help=("number of planning updates " +
                             f"[{self.valid['N'][0]}-{self.valid['N'][1]}]"))
-        parser.add_argument('-o', '--output', type=str, default='placeholder',
+        parser.add_argument('-o', '--output', type=str, default='',
                             help=f"name of output plot file (don't put .png)")
 
         self.args = parser.parse_args()
