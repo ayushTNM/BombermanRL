@@ -204,7 +204,7 @@ class Game:
             'Player': [Player, 15, [(self.env.x, self.env.y), self.bomb_range], self.loadedImgs['player']],
                 
             'PrioritizedSweepingAgent':[PrioritizedSweepingAgent, 0, 
-            [self.env.n_states, self.env.action_size(), self.alpha, self.gamma, (self.env.x,self.env.y), self.bomb_range], self.loadedImgs['agent']],
+            [self.env.n_states, self.env.action_size(), self.alpha, self.gamma, (self.env.x,self.env.y), self.bomb_range], self.loadedImgs['bomberman']],
                 
             'Random':[Random, 0, [(self.env.x,self.env.y), self.bomb_range], self.loadedImgs['agent']]
             }
