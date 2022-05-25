@@ -39,7 +39,7 @@ class Game:
         self.RL = True
         self.alg = "PrioritizedSweepingAgent"
         self.render = False
-        self.render_best = False
+        self.render_best = True
 
         self.agent = None
         self.wait_bg = False
@@ -127,9 +127,10 @@ class Game:
                 self.wait_bg = 1 - self.render
                 rewards = np.zeros(shape=(self.n_repetitions, self.n_episodes))
                 progress = ProgressBar(self.n_repetitions*self.n_episodes, process_name=f'{crate_count} crates')
+                tic = datetime.now().time()         # will be used for vault.save_array call
 
                 best_actions = []
-                best_c_r = float('-inf')                # best run => least negative cumulative reward
+                best_c_r = float('-inf')            # best run => least negative cumulative reward
 
             for rep in range(self.n_repetitions):
                 self.agent = agent(*args)           # initialize Agent based on specific arguments
@@ -152,7 +153,7 @@ class Game:
                     continue        # move to next repetition
                 break               # else, break out of "crate_count" loop and return to menu
             else:                   # if last episode has been reached (agent = RL or random)
-                vault.save_array(data=rewards, id=crate_count)
+                vault.save_array(data=rewards, id=crate_count, tic=tic)
                 if actions != None and self.render_best == True:
                     self.replay_best(best_actions, best_c_r)
                 continue
@@ -164,8 +165,7 @@ class Game:
             seconds: float = round((end-start) % 60, 1)
             stringtime: str = f'{minutes}:{str(seconds).zfill(4)} min' if minutes else f'{seconds} sec'
             print(f'\nExperiment finished in {stringtime}\n')
-            if self.output_name:
-                plot_results(self.output_name, title=f'Learning Curves {self.grid_size[0]-2}x{self.grid_size[1]-2}')
+            if self.output_name: plot_results(self.output_name)
 
     def playout(self) -> tuple[int, list[int]]:
         """
