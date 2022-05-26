@@ -118,7 +118,6 @@ def menu_config() -> pygame_menu.Menu:
                     ('No', False)]
     bomb_limit = [(str(i),i) for i in range(1,np.sum(GRID_SIZE-2)+1)]
 
-    print(render[0][1])
     game.set_alg(None,character[0][1])
     game.set_render(None,render[0][1])
     game.set_render_best(None,render_best[0][1])
