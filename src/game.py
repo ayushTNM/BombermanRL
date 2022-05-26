@@ -33,8 +33,8 @@ class Game:
         # these can be modified from pygame menu or CLI arguments
         self.RL = True
         self.wait_bg = False
-
         self.agent = None
+        self.stats = []
 
         pygame.font.init()
         self.font = pygame.font.SysFont('Bebas', 100)
@@ -84,14 +84,24 @@ class Game:
                                    self.display.get_height() // 2 - font_h//2))
                 self.wait_bg = False
 
+            if self.stats:
+                pygame.draw.rect(self.display, (200,200,200), pygame.Rect(self.display.get_width()//2-200, 5, 400, 85))
+                for idx, statSurface in enumerate(self.stats):
+                    self.display.blit(statSurface, (self.display.get_width() // 2 - statSurface.get_width() // 2, 10 + 25*idx))
             pygame.display.update()
 
-    def replay_best(self, actions: list[int]) -> None:
+    def replay_best(self, actions: list[int], r: int) -> None:
         """
         After an agent has trained for a number of episodes,
         this function can be used to render the best sequence of actions it has found
         """
         temp_render,temp_fps = self.render, self.env.fps
+
+        statFont = pygame.font.SysFont('Bebas', 40)
+        statSurface1 = statFont.render(f'Best total reward found: {r}', False, (231,113,123))
+        statSurface2 = statFont.render(f'Bombs placed: {(bp := actions.count(5))}', False, (247,240,226))
+        statSurface3 = statFont.render(f'Steps moved: {len(actions)-bp}', False, (131,105,224))
+        self.stats = [statSurface1, statSurface2, statSurface3]
 
         self.env.fps = 15
         self.render = True
@@ -104,6 +114,7 @@ class Game:
         self.game_over()
 
         self.env.fps,self.render = temp_fps,temp_render
+        self.stats = []
 
     def main(self):
 
@@ -124,11 +135,11 @@ class Game:
                     c_r, actions = self.playout()
                     
                     if self.RL: 
-                        data["progress"](np.ravel_multi_index ((rep,ep),(self.n_repetitions,self.n_episodes)))
-                        data["rewards"][rep,ep] = c_r
+                        data['progress'](np.ravel_multi_index ((rep,ep),(self.n_repetitions,self.n_episodes)))
+                        data['rewards'][rep,ep] = c_r
 
-                        if c_r > data["best_c_r"]:
-                            data["best_c_r"], data["best_actions"] = c_r, actions
+                        if c_r > data['best_c_r']:
+                            data['best_c_r'], data['best_actions'] = c_r, actions
 
                     else:
                         self.game_over()
@@ -137,9 +148,9 @@ class Game:
                     continue        # move to next repetition
                 break               # else, break out of "crate_count" loop and return to menu
             else:                   # if last episode has been reached (agent = RL or random)
-                vault.save_array(data=data["rewards"], id=crate_count,tic=tic)
+                vault.save_array(data=data['rewards'], id=crate_count,tic=tic)
                 if actions != None and self.render_best:
-                    self.replay_best(data["best_actions"])
+                    self.replay_best(data['best_actions'], data['best_c_r'])
                 continue
             break
 
