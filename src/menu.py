@@ -26,13 +26,16 @@ from agent import Player, PrioritizedSweepingAgent, Random      # implementation
 fix_dirs()
 
 def main():
-    main_menu = menu_config()
-    menu_loop(main_menu)
-    # game = Game(GRID_SIZE, BOMB_RANGE, REPETITIONS, EPISODES,
-    #             WALL_CHANCE, CRATE_CHANCE, MAX_N_CRATES,
-    #             ALPHA, GAMMA, EPSILON, N_PLANNING_UPDATES,
-    #             TILE_SIZE, IMAGES, OUTPUT)
-    # game.main()
+    # main_menu = menu_config()
+    # menu_loop(main_menu)
+    game = Game(GRID_SIZE, BOMB_RANGE, CRATE_CHANCE, WALL_CHANCE, REPETITIONS, EPISODES, MAX_N_CRATES,
+                HYPERPARAMS, TILE_SIZE, IMAGES, OUTPUT)
+
+    game.set_alg(None,PrioritizedSweepingAgent)
+    game.set_render(None,False)
+    game.set_render_best(None,True)
+    game.set_bomb_limit(None,1)
+    game.main()
 
 # ------------- #
 #   CONSTANTS   #

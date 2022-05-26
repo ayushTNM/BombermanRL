@@ -85,7 +85,7 @@ class Game:
                 self.wait_bg = False
 
             if self.stats:
-                pygame.draw.rect(self.display, (200,200,200), pygame.Rect(self.display.get_width()//2-200, 5, 400, 85))
+                pygame.draw.rect(self.display, (200,200,200), pygame.Rect(self.display.get_width()//2-180, 5, 360, 85))
                 for idx, statSurface in enumerate(self.stats):
                     self.display.blit(statSurface, (self.display.get_width() // 2 - statSurface.get_width() // 2, 10 + 25*idx))
             pygame.display.update()
