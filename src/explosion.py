@@ -35,5 +35,5 @@ class Explosion:
 
     def update(self, dt: int) -> None:
         self.time = self.time - dt
-        if self.time < round(self.timer/1.5): self.frame = 2
-        elif self.time < round(self.timer/2): self.frame = 1
+        if self.time < self.timer/1.5: self.frame = 2
+        elif self.time < self.timer/2: self.frame = 1
