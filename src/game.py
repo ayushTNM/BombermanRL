@@ -45,7 +45,7 @@ class Game:
         # define announcements
         self.winSurface = self.font.render('Win', False, (0, 0, 0))
         self.loseSurface = self.font.render('Lose', False, (0, 0, 0))
-        self.waitSurface = self.font.render('Please Wait', False, (0, 0, 0))
+        self.waitSurface = self.font.render('Training Agent', False, (0, 0, 0))
 
     def load_images(self, images: list[str]) -> None:
         """Loads all images in list :param images: to attribute self.loadedImgs"""
@@ -103,7 +103,7 @@ class Game:
         statSurface3 = statFont.render(f'Steps moved: {len(actions)-bp}', False, (131,105,224))
         self.stats = [statSurface1, statSurface2, statSurface3]
 
-        self.env.fps = 15
+        self.env.fps = 5
         self.render = True
         self.env.reset(self.agent)
         self.draw()
@@ -160,7 +160,8 @@ class Game:
             seconds: float = round((end-start) % 60, 1)
             stringtime: str = f'{minutes}:{str(seconds).zfill(4)} min' if minutes else f'{seconds} sec'
             print(f'\nExperiment finished in {stringtime}\n')
-            if self.output_name: plot_results(self.output_name)
+            try: int(self.output_name)
+            except ValueError: plot_results(self.output_name)
 
     def playout(self) -> tuple[int, list[int]]:
         """
@@ -203,7 +204,7 @@ class Game:
                     "best_actions" : [],
                     "best_c_r" : float('-inf')}                # best run => least negative cumulative reward}
             self.wait_bg = not self.render
-            self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count, seed=42)
+            self.env = Environment(*self.grid_size, self.wall_chance, crate_count=crate_count, seed=28041993)
             self.params.update(self.hyperparams | {"n_states":self.env.n_states,"n_actions":self.env.n_actions})
 
         return data

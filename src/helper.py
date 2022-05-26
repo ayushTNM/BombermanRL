@@ -51,7 +51,6 @@ class DataManager:
     def __init__(self, dirname: str = '') -> None:
         try: self.dirname = str(datetime.now()).split('.')[0].replace(':', ''); int(dirname)
         except ValueError: self.dirname = dirname
-        else: self.dirname = dirname
         if not os.path.exists(data_dir := os.path.join(os.getcwd(),'..','npz', self.dirname)): os.mkdir(data_dir)
     
     def save_array(self, data: np.ndarray, id: int, tic: time) -> None:
