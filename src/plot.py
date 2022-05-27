@@ -1,9 +1,12 @@
-import os
-import datetime
-import re
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.signal import savgol_filter       # smoothing plots
+# python standard library
+import os           # directories
+import re           # directories
+import datetime     # adding runtimes to labels
+import argparse     # getting data directory name
+# dependencies
+import numpy as np                          # arrays
+import matplotlib.pyplot as plt             # plotting
+from scipy.signal import savgol_filter      # smoothing plots
 
 def main():
     """Usage
@@ -14,9 +17,13 @@ def main():
     
     make sure you're working from src, otherwise the npz dir will not be found
     """
-    output = 'plot5'
-    plot_results(output)
+    dirname = get_dirname().input
+    plot_results(dirname)
 
+def get_dirname() -> str:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input', type=str, help=f"name of npz subdirectory holding your data")
+    return parser.parse_args()
 
 def plot_results(output: str) -> None:
     part_one = 'Learning Curves'

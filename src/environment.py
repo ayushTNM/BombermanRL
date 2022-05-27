@@ -75,7 +75,7 @@ class Environment(object):
 
     def step(self, action, agent, draw: Callable) -> tuple[int, Optional[int]]:
         r = -1                       # normal step penalty = -1
-        r -= 1 * (action==5)         # bomb penalty = -10
+        r -= 9 * (action==5)         # bomb penalty = -10
         self.clock.tick(self.fps)
         self.dt = self.clock.get_fps()
         movement_actions = [(0,1), (1,0), (0,-1), (-1,0)]
@@ -102,7 +102,7 @@ class Environment(object):
         else:
             agent.frame = 0
         draw()
-        r += 2 * self.update_bombs(draw)        # crate reward = +5
+        r += 5 * self.update_bombs(draw)        # crate reward = +5
         if agent.type == "PrioritizedSweepingAgent":
             self.exploded_crates[self.grid[tuple([*self.crate_locs.T])] != 2] =1
             return r, self.to_state(agent.get_coords())

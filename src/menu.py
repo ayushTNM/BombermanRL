@@ -68,7 +68,7 @@ INFO = pygame.display.Info()
 TILE_SIZE = int((INFO.current_h*0.95) / GRID_SIZE[1])
 WINDOW_SIZE = GRID_SIZE * TILE_SIZE
 SURFACE = pygame.display.set_mode(WINDOW_SIZE)
-IMAGES: list[str] = sorted(glob.glob(os.path.join('..','images','**','*.png'))) # load in image files
+IMAGES: list[str] = sorted(glob.glob(os.path.join('..','assets','sprites','**','*.png'))) # load in image files
 
 # ------------- #
 #   functions   #

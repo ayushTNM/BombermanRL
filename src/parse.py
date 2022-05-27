@@ -1,5 +1,6 @@
-import argparse
-from typing import Union
+# python standard library
+import argparse             # taking CLI arguments
+from typing import Union    # type hinting
 
 class ParseWrapper:
 
@@ -25,7 +26,7 @@ class ParseWrapper:
         parser.add_argument('-d', '--grid_dimensions', type=int, default=5,
                             help=("dimensions of the environment " +
                             f"[{self.valid['d'][0]}-{self.valid['d'][1]}] "))
-        parser.add_argument('-b', '--bomb_range', type=int, default=1,
+        parser.add_argument('-b', '--bomb_range', type=int, default=9,
                             help=("explosion range for bombs " +
                             f"[{self.valid['b'][0]}-{self.valid['b'][1]}] "))
         parser.add_argument('-C', '--max_crate_count', type=int, default=5,
@@ -53,7 +54,7 @@ class ParseWrapper:
         parser.add_argument('-E', '--epsilon', type=float, default=0.01,
                             help=("learning rate " +
                             f"[{self.valid['E'][0]}-{self.valid['E'][1]}]"))
-        parser.add_argument('-N', '--n_planning_updates', type=int, default=10,
+        parser.add_argument('-N', '--n_planning_updates', type=int, default=14,
                             help=("number of planning updates " +
                             f"[{self.valid['N'][0]}-{self.valid['N'][1]}]"))
         parser.add_argument('-o', '--output', type=str, default='',

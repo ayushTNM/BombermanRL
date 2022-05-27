@@ -6,10 +6,10 @@ from typing import Any          # type hinting
 import numpy as np              # arrays, math
 import pygame                   # rendering, human interaction
 # local imports
-from environment import Environment                             # obtaining rewards for agent
-from agent import Agent                                         # type hinting
-from helper import DataManager, ProgressBar                     # storing arrays, progress visualization
-from plot import plot_results                                   # final results plotting
+from environment import Environment                 # obtaining rewards for agent
+from agent import Agent                             # type hinting
+from helper import DataManager, ProgressBar         # storing arrays, progress visualization
+from plot import plot_results                       # final results plotting
 
 BACKGROUND = (107, 142, 35)     # moss green
 
@@ -101,7 +101,7 @@ class Game:
         statSurface1 = statFont.render(f'Best total reward found: {r}', False, (231,113,123))
         statSurface2 = statFont.render(f'Bombs placed: {(bp := actions.count(5))}', False, (247,240,226))
         statSurface3 = statFont.render(f'Steps moved: {len(actions)-bp}', False, (131,105,224))
-        self.stats = [statSurface1, statSurface2, statSurface3]
+        # self.stats = [statSurface1, statSurface2, statSurface3]
 
         self.env.fps = 5
         self.render = True
