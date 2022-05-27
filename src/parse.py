@@ -59,12 +59,14 @@ class ParseWrapper:
                             f"[{self.valid['N'][0]}-{self.valid['N'][1]}]"))
         parser.add_argument('-o', '--output', type=str, default='',
                             help=f"name of output plot file (don't put .png)")
+        parser.add_argument('-m', '--menu', action='store_true',
+                            help=("turn on menu, incompatible with running shell scripts"))
 
         self.args = parser.parse_args()
         self.argdict = vars(self.args)
         self.check_validity()
 
-    def __call__(self) -> tuple[int, int, int, int, int, int, float, float, float, int, str]:
+    def __call__(self) -> tuple[int, int, int, int, int, int, float, float, float, int, str, bool]:
         print('\nExperiment will be ran with the following parameters:')
         for arg, value in self.argdict.items():
             print(f'{arg:>20}|{value}')
@@ -73,7 +75,7 @@ class ParseWrapper:
     def check_validity(self) -> None:
         for arg, value in self.argdict.items():
             if value is None: continue
-            if type(value) == str: continue
+            if type(value) in (str, bool): continue
             if value < self.valid_long[arg][0] or value > self.valid_long[arg][1]:
                 raise ValueError(f'Invalid value for argument "{arg}": {value}\n' +
                                  f"Please choose between {self.valid_long[arg][0]} and {self.valid_long[arg][1]}")

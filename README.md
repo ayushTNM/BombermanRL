@@ -19,11 +19,16 @@ The setup is simple:
     $ cd src
     $ python3 menu.py -h
 
-This will show all of the parameters to change.
+This will show all of the parameters you can change from the CLI.
 
 To run the file with default parameters, just type:
 
     $ python3 menu.py
+
+Some parameters to look into:
+
+    -o <plotname>        # store the learning curves as a plot
+    -m                   # flag to turn on menu (if you want to play yourself)
 
 Demo
 ----

@@ -26,16 +26,18 @@ from agent import Player, PrioritizedSweepingAgent, Random      # implementation
 fix_dirs()
 
 def main():
-    # main_menu = menu_config()
-    # menu_loop(main_menu)
-    game = Game(GRID_SIZE, BOMB_RANGE, CRATE_CHANCE, WALL_CHANCE, REPETITIONS, EPISODES, MAX_N_CRATES,
-                HYPERPARAMS, TILE_SIZE, IMAGES, OUTPUT)
+    if SHOW_MENU:
+        main_menu = menu_config()
+        menu_loop(main_menu)
+    else:
+        game = Game(GRID_SIZE, BOMB_RANGE, CRATE_CHANCE, WALL_CHANCE, REPETITIONS, EPISODES, MAX_N_CRATES,
+                    HYPERPARAMS, TILE_SIZE, IMAGES, OUTPUT)
 
-    game.set_alg(None,PrioritizedSweepingAgent)
-    game.set_render(None,False)
-    game.set_render_best(None,True)
-    game.set_bomb_limit(None,1)
-    game.main()
+        game.set_alg(None,PrioritizedSweepingAgent)
+        game.set_render(None,False)
+        game.set_render_best(None,True)
+        game.set_bomb_limit(None,1)
+        game.main()
 
 # ------------- #
 #   CONSTANTS   #
@@ -49,6 +51,7 @@ CRATE_CHANCE, WALL_CHANCE = args[3],args[4]
 REPETITIONS, EPISODES = args[5], args[6]
 HYPERPARAMS = {"alpha": args[7],"gamma": args[8],"epsilon": args[9],"n_planning_updates": args[10]}
 OUTPUT = args[11] + str(args[0])
+SHOW_MENU = args[12]
 
 WIDTH = HEIGHT = DIMENSIONS                              # world dimensions (excluding border walls)
 GRID_SIZE = np.array([WIDTH+2, HEIGHT+2], dtype=int)     # np.ndarray for math operations
