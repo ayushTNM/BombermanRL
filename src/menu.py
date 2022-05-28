@@ -49,7 +49,7 @@ args = ParseWrapper(parser)()
 DIMENSIONS, BOMB_RANGE, MAX_N_CRATES = args[0], args[1], args[2]
 CRATE_CHANCE, WALL_CHANCE = args[3],args[4]
 REPETITIONS, EPISODES = args[5], args[6]
-HYPERPARAMS = {"alpha": args[7],"gamma": args[8],"epsilon": args[9],"n_planning_updates": args[10]}
+HYPERPARAMS = {"alpha": args[7], "gamma": args[8], "epsilon": args[9], "n_planning_updates": args[10]}
 OUTPUT = args[11] + str(args[0])
 SHOW_MENU = args[12]
 

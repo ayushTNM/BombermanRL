@@ -15,7 +15,7 @@ BACKGROUND = (107, 142, 35)     # moss green
 
 class Game:
     def __init__(self, grid_size: np.ndarray, bomb_range: int, crate_chance: int,wall_chance: int,
-                n_repetitions: int, n_episodes: int, max_n_crates: int, hyperparams,
+                n_repetitions: int, n_episodes: int, max_n_crates: int, hyperparams: dict,
                 tile_size: int, images: list[str], output: str = 'plot'):
 
         self.grid_size = grid_size
@@ -26,7 +26,7 @@ class Game:
         self.n_repetitions = n_repetitions
         self.n_episodes = n_episodes
         self.max_n_crates = max_n_crates
-        self.params = {"bomb_range":bomb_range,"step":1,"death":0}
+        self.params = {"bomb_range": bomb_range, "step": 1, "death": 0}
         self.hyperparams = hyperparams
         self.output_name = output
 
