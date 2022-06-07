@@ -11,24 +11,30 @@ This project does require at least Python 3.9, probably even 3.10.
 
 The setup is simple:
 
-    $ git clone git@github.com:ayushTNM/BombermanRL.git   # assuming SSH is set up
-    $ cd BombermanRL
-    $ python3 -m venv venv                                # create a virtual environment
-    $ source venv/bin/activate
-    $ pip install -r requirements.txt
-    $ cd src
-    $ python3 menu.py -h
+```bash
+$ git clone git@github.com:ayushTNM/BombermanRL.git   # assuming SSH is set up
+$ cd BombermanRL
+$ python3 -m venv venv                                # create a virtual environment
+$ source venv/bin/activate                            # activate virtual environment
+(venv) $ pip install -r requirements.txt
+(venv) $ cd src
+(venv) $ python3 menu.py -h
+```
 
 This will show all of the parameters you can change from the CLI.
 
 To run the file with default parameters, just type:
 
-    $ python3 menu.py
+```bash
+(venv) $ python3 menu.py
+```
 
-Some parameters to look into:
+Some fundamental parameters to look into:
 
-    -o <plotname>        # store the learning curves as a plot
-    -m                   # flag to turn on menu (if you want to play yourself)
+```bash
+-o [plotname]        # store the learning curves as a plot
+-m                   # flag to turn on menu (if you want to play yourself)
+```
 
 Demo
 ----
